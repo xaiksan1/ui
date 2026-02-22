@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Map To-Do Engine - UI #7 ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #00f2ff; --bg: #020205; --neon-red: #ff004c; --agent-gold: #f59e0b; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; overflow: hidden; }
+        .glass { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(0, 242, 255, 0.2); }
+        .mono { font-family: 'Fira Code', monospace; }
+        
+        #ui-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; }
+        .interactive { pointer-events: auto; }
+
+        input, select, textarea { 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            color: white; 
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus { border-color: var(--primary); }
+
+        .star-label {
+            position: absolute;
+            color: rgba(255,255,255,0.7);
+            font-size: 10px;
+            pointer-events: none;
+            text-transform: uppercase;
+            font-weight: 700;
+            white-space: nowrap;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.2), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        
+        #instructions-mini {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.4;
+        }
+
+        .agent-badge {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--agent-gold);
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+    <div id="instructions-mini" class="mono">Clic Gauche: Rotation | Clic Droit: Panoramique (Déplacer tout) | Clic sur Étoile: Sélection Individuelle</div>
+
+    <div id="ui-layer">
+        <header class="flex justify-between items-start">
+            <div class="glass p-6 rounded-3xl interactive space-y-4">
+                <div>
+                    <h1 class="text-2xl font-black italic tracking-tighter uppercase">Constellation<span class="text-cyan-400">Roadmap</span></h1>
+                    <p class="text-[9px] mono opacity-50">> PROTOCOLE : SÉLECTION CHIRURGICALE ✨ UI #7</p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="h-2 w-24 bg-white/10 rounded-full overflow-hidden">
+                        <div id="global-progress" class="h-full bg-cyan-400 shadow-[0_0_10px_cyan]" style="width: 0%"></div>
+                    </div>
+                    <span id="progress-text" class="text-[9px] mono text-cyan-400 font-bold">0% LUMINOSITÉ</span>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="getOracleWisdom()" class="text-[9px] font-bold text-cyan-400 border border-cyan-400/30 px-3 py-1 rounded-full hover:bg-cyan-400 hover:text-black transition-all">Oracle ✨</button>
+                    <button onclick="getCoachAdvice()" class="text-[9px] font-bold text-amber-400 border border-amber-400/30 px-3 py-1 rounded-full hover:bg-amber-400 hover:text-black transition-all">Conseil ✨</button>
+                    <button onclick="autoLinkStars()" id="link-btn" class="text-[9px] font-bold text-emerald-400 border border-emerald-400/30 px-3 py-1 rounded-full hover:bg-emerald-400 hover:text-black transition-all">Auto-Link ✨</button>
+                    <button onclick="resetCamera()" class="text-[9px] font-bold text-white/50 border border-white/10 px-3 py-1 rounded-full hover:bg-white/10 transition-all">Reset View</button>
+                </div>
+            </div>
+
+            <!-- Fenêtre de création de tâche & IA -->
+            <div class="glass p-6 rounded-3xl interactive w-80 space-y-4">
+                <div id="selection-panel" class="hidden border-b border-white/10 pb-4 mb-4">
+                    <h2 class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-2">Étoile Sélectionnée</h2>
+                    <div id="selected-task-name" class="text-sm font-bold truncate mb-1 text-white">Aucune</div>
+                    <div id="agent-status-tag" class="mb-4"></div>
+                    
+                    <div class="space-y-2">
+                        <button id="expand-btn" onclick="expandSelectedTask()" class="w-full bg-cyan-600/10 border border-cyan-400/30 text-cyan-400 py-1.5 rounded-lg text-[8px] font-black uppercase hover:bg-cyan-400 hover:text-black transition-all">Décomposer ✨</button>
+                        <button id="delegate-btn" onclick="delegateToAgent()" class="w-full bg-amber-600 text-black py-2 rounded-lg text-[9px] font-black uppercase hover:bg-white transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]">Déléguer à ADAM ✨</button>
+                    </div>
+                </div>
+
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400">Ajouter manuellement</h2>
+                <div class="space-y-2">
+                    <input type="text" id="task-label" placeholder="Nom de l'action..." class="w-full p-2 text-xs rounded-lg">
+                    <select id="task-phase" class="w-full p-2 text-xs rounded-lg">
+                        <option value="1">Phase 1: Démêlage</option>
+                        <option value="2">Phase 2: Agents</option>
+                        <option value="3">Phase 3: JSBLON</option>
+                        <option value="4">Phase 4: Serena</option>
+                        <option value="5">Side-Quest: Emploi</option>
+                    </select>
+                    <button onclick="addNewTask()" class="w-full bg-white/5 border border-white/10 text-white font-bold py-2 rounded-lg text-[10px] uppercase hover:bg-white hover:text-black transition-all">Créer</button>
+                </div>
+
+                <div class="border-t border-white/10 pt-4">
+                    <h2 class="text-[9px] font-black uppercase tracking-widest text-amber-400 mb-2">Explosion IA ✨</h2>
+                    <textarea id="ai-prompt" placeholder="Objectif complexe..." class="w-full p-2 text-[10px] rounded-lg h-12 mb-2"></textarea>
+                    <button id="ai-gen-btn" onclick="generateTasksWithAI()" class="w-full bg-amber-600 text-black font-black py-2 rounded-lg text-[10px] uppercase hover:bg-white transition-all">Insufler ✨</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Modals -->
+        <div id="oracle-overlay" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden flex items-center justify-center z-50 p-10">
+            <div class="max-w-2xl glass p-10 rounded-[3rem] text-center space-y-6 interactive relative overflow-hidden">
+                <div id="agent-glow" class="absolute inset-0 opacity-10 pointer-events-none"></div>
+                <h2 class="text-2xl font-black italic tracking-tighter uppercase text-cyan-400" id="oracle-title">Oracle<span class="text-white">Wisdom</span></h2>
+                <div id="agent-profile" class="hidden mb-4 flex flex-col items-center">
+                    <div id="agent-avatar" class="text-4xl mb-2">🤖</div>
+                    <div id="agent-type-name" class="text-[10px] font-black tracking-widest text-amber-500 uppercase">AGENT_SPEC</div>
+                </div>
+                <p id="oracle-text" class="text-sm italic leading-relaxed text-white/80"></p>
+                <div id="action-list" class="text-[10px] mono text-left text-cyan-200/60 space-y-1 mx-auto max-w-md hidden"></div>
+                <button onclick="closeOracle()" class="px-8 py-2 border border-cyan-400 text-cyan-400 text-xs font-black uppercase rounded-full hover:bg-cyan-400 hover:text-black transition-all relative z-10">Confirmer</button>
+            </div>
+        </div>
+
+        <footer class="flex justify-end">
+            <div id="status-console" class="glass p-4 rounded-2xl w-96 h-24 overflow-y-auto mono text-[9px] text-cyan-200/40 space-y-1 interactive">
+                <div>[SYSTEM] Sélection individuelle activée. Prêt à cibler.</div>
+            </div>
+        </footer>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+
+        const apiKey = ""; 
+        let scene, camera, renderer, starPoints, starGeometry, starMaterial, linesGroup;
+        let isDragging = false;
+        let dragMode = "rotate"; 
+        let startMousePosition = { x: 0, y: 0 };
+        let previousMousePosition = { x: 0, y: 0 };
+        let targetRotation = { x: 0, y: 0 };
+        let targetTranslation = { x: 0, y: 0 };
+        let targetCameraZ = 60;
+        let selectedTaskIndex = -1;
+        
+        let tasks = [
+            { id: 1, label: "Isoler Ledger", phase: 1, progress: 0.1, pos: [-20, 10, 0], assignedAgent: null },
+            { id: 2, label: "Hash SHA-256", phase: 1, progress: 0, pos: [-15, 15, 5], assignedAgent: null },
+            { id: 3, label: "MineBlock Dyn", phase: 1, progress: 0, pos: [-10, 10, -5], assignedAgent: null },
+            { id: 4, label: "Map Agents", phase: 2, progress: 0, pos: [0, 20, 10], assignedAgent: null },
+            { id: 5, label: "Minting Vérifié", phase: 2, progress: 0, pos: [5, 25, 5], assignedAgent: null },
+            { id: 6, label: "Souffle ADAM", phase: 3, progress: 0.2, pos: [20, 10, 0], assignedAgent: null },
+            { id: 7, label: "Genesis JSBLON", phase: 3, progress: 0, pos: [25, 5, -10], assignedAgent: null },
+            { id: 8, label: "Audit Serena", phase: 4, progress: 0, pos: [10, -10, 15], assignedAgent: null },
+            { id: 9, label: "Intégrité Stream", phase: 4, progress: 0, pos: [15, -15, 10], assignedAgent: null },
+            { id: 10, label: "Portfolio IDE", phase: 5, progress: 0.5, pos: [-20, -20, 0], assignedAgent: null },
+            { id: 11, label: "Discours JSBLON", phase: 5, progress: 0, pos: [-25, -15, -5], assignedAgent: null }
+        ];
+
+        let connections = []; 
+
+        async function callGemini(prompt, systemInstruction = "", responseType = "text") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } };
+            if (responseType === "json") payload.generationConfig = { responseMimeType: "application/json" };
+            try {
+                const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                const result = await res.json();
+                return result.candidates?.[0]?.content?.parts?.[0]?.text;
+            } catch (e) { return null; }
+        }
+
+        async function speak(text) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } }
+                }
+            };
+            try {
+                const res = await fetch(url, { method: "POST", body: JSON.stringify(payload) });
+                const result = await res.json();
+                const pcmData = result.candidates[0].content.parts[0].inlineData.data;
+                const audioBlob = pcmToWav(pcmData, 24000);
+                const audio = new Audio(URL.createObjectURL(audioBlob));
+                audio.play();
+            } catch (e) {}
+        }
+
+        function pcmToWav(base64Pcm, sampleRate) {
+            const buffer = Uint8Array.from(atob(base64Pcm), c => c.charCodeAt(0)).buffer;
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+            const writeString = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
+            writeString(0, 'RIFF'); view.setUint32(4, 36 + buffer.byteLength, true); writeString(8, 'WAVE');
+            writeString(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeString(36, 'data');
+            view.setUint32(40, buffer.byteLength, true);
+            const final = new Uint8Array(wavHeader.byteLength + buffer.byteLength);
+            final.set(new Uint8Array(wavHeader), 0); final.set(new Uint8Array(buffer), 44);
+            return new Blob([final], { type: 'audio/wav' });
+        }
+
+        function setupControls() {
+            const canvas = renderer.domElement;
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                dragMode = (e.button === 2 || e.shiftKey) ? "pan" : "rotate";
+                startMousePosition = { x: e.clientX, y: e.clientY };
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                const mouse = new THREE.Vector2();
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                raycaster.params.Points.threshold = 1.5;
+                const intersects = raycaster.intersectObject(starPoints);
+                canvas.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+
+                if (dragMode === "rotate") {
+                    targetRotation.y += deltaX * 0.005;
+                    targetRotation.x += deltaY * 0.005;
+                } else {
+                    const factor = targetCameraZ * 0.0015;
+                    targetTranslation.x += deltaX * factor;
+                    targetTranslation.y -= deltaY * factor;
+                }
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                const moveDist = Math.hypot(e.clientX - startMousePosition.x, e.clientY - startMousePosition.y);
+                isDragging = false;
+
+                // Si le déplacement est minime (< 5px), on considère ça comme un clic
+                if (moveDist < 5 && e.button === 0 && !e.shiftKey) {
+                    handleSelection(e);
+                }
+            });
+
+            canvas.addEventListener('wheel', (e) => {
+                targetCameraZ = Math.max(5, Math.min(800, targetCameraZ + e.deltaY * 0.1));
+            }, { passive: true });
+        }
+
+        function handleSelection(event) {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            // On augmente le seuil pour faciliter la sélection des nodes
+            raycaster.params.Points.threshold = 3.0; 
+            const intersects = raycaster.intersectObject(starPoints);
+            
+            if (intersects.length > 0) {
+                // On prend l'intersection la plus proche
+                selectTask(intersects[0].index);
+            } else {
+                deselectTask();
+            }
+        }
+
+        function selectTask(index) {
+            selectedTaskIndex = index;
+            const task = tasks[index];
+            document.getElementById('selection-panel').classList.remove('hidden');
+            document.getElementById('selected-task-name').innerText = task.label;
+            document.getElementById('agent-status-tag').innerHTML = task.assignedAgent ? `<span class='agent-badge'>AGENT : ${task.assignedAgent.name}</span>` : "";
+            
+            // Centrer l'étoile sélectionnée
+            targetTranslation.x = -task.pos[0];
+            targetTranslation.y = -task.pos[1];
+            targetCameraZ = 35;
+            
+            addLog(`Cible acquise : ${task.label}`);
+            createStars();
+        }
+
+        function deselectTask() {
+            selectedTaskIndex = -1;
+            document.getElementById('selection-panel').classList.add('hidden');
+            createStars();
+        }
+
+        window.delegateToAgent = async () => {
+            if (selectedTaskIndex === -1) return;
+            const task = tasks[selectedTaskIndex];
+            addLog(`ADAM forge une entité pour : ${task.label}`);
+            const result = await callGemini(`Forge un agent pour : "${task.label}". JSON { "name": string, "type": string, "emoji": string, "personality": string, "actions": string[] }`, "ADAM Core.", "json");
+            if (result) {
+                task.assignedAgent = JSON.parse(result);
+                document.getElementById('oracle-overlay').classList.remove('hidden');
+                document.getElementById('oracle-title').innerHTML = "Agent<span class='text-amber-500'>Déployé</span>";
+                document.getElementById('agent-profile').classList.remove('hidden');
+                document.getElementById('agent-avatar').innerText = task.assignedAgent.emoji;
+                document.getElementById('agent-type-name').innerText = task.assignedAgent.name;
+                document.getElementById('oracle-text').innerText = `${task.assignedAgent.personality} "Prêt pour ${task.label}."`;
+                document.getElementById('action-list').classList.remove('hidden');
+                document.getElementById('action-list').innerHTML = task.assignedAgent.actions.map(a => `<div>> ${a}</div>`).join('');
+                speak(`Agent ${task.assignedAgent.name} prêt.`);
+                createStars();
+            }
+        };
+
+        window.autoLinkStars = async () => {
+            addLog("Analyse des dépendances sémantiques...");
+            const res = await callGemini(`Lien pour : ${JSON.stringify(tasks.map(t=>t.label))}. JSON [[id1, id2], ...]`, "ADAM.", "json");
+            if (res) { connections = JSON.parse(res); createLinks(); addLog(`${connections.length} liens établis.`); }
+        };
+
+        window.expandSelectedTask = async () => {
+            if (selectedTaskIndex === -1) return;
+            const task = tasks[selectedTaskIndex];
+            const res = await callGemini(`Décompose "${task.label}". JSON { "label": string, "phase": ${task.phase}, "pos": [x,y,z] }[]`, "ADAM Expansion.", "json");
+            if (res) {
+                JSON.parse(res).forEach(t => { t.id=Date.now()+Math.random(); t.progress=0; tasks.push(t); connections.push([task.id, t.id]); });
+                createStars(); createLinks(); updateUI();
+            }
+        };
+
+        window.getOracleWisdom = async () => {
+            document.getElementById('oracle-overlay').classList.remove('hidden');
+            document.getElementById('oracle-text').innerText = "Analyse stellaire...";
+            const res = await callGemini(`Analyse projet Nosferatu.`, "Oracle.");
+            if (res) { document.getElementById('oracle-text').innerText = res; speak(res); }
+        };
+
+        window.getCoachAdvice = async () => {
+            document.getElementById('oracle-overlay').classList.remove('hidden');
+            const res = await callGemini(`Conseil Michael Lefebvre.`, "Coach ADAM.");
+            if (res) { document.getElementById('oracle-text').innerText = res; speak(res); }
+        };
+
+        window.generateTasksWithAI = async () => {
+            const p = document.getElementById('ai-prompt').value; if (!p) return;
+            addLog(`Insuflation pour : ${p}`);
+            const res = await callGemini(p, "Generator.", "json");
+            if (res) {
+                JSON.parse(res).forEach(t => { t.id=Date.now()+Math.random(); t.progress=0; tasks.push(t); });
+                createStars(); createLinks(); updateUI();
+            }
+        };
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x020205, 0.01);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.z = 60;
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            linesGroup = new THREE.Group();
+            scene.add(linesGroup);
+            createStars(); createLinks(); setupControls(); animate(); updateUI();
+        }
+
+        function createStars() {
+            if (starPoints) scene.remove(starPoints);
+            const geometry = new THREE.BufferGeometry();
+            const pos = new Float32Array(tasks.length * 3);
+            const col = new Float32Array(tasks.length * 3);
+            const siz = new Float32Array(tasks.length);
+            tasks.forEach((t, i) => {
+                pos[i*3]=t.pos[0]; pos[i*3+1]=t.pos[1]; pos[i*3+2]=t.pos[2];
+                const b = 0.3 + (t.progress * 0.7);
+                if (i === selectedTaskIndex) { col[i*3]=1; col[i*3+1]=1; col[i*3+2]=1; siz[i]=60; }
+                else if (t.assignedAgent) { col[i*3]=0.96; col[i*3+1]=0.62; col[i*3+2]=0.04; siz[i]=25 + Math.sin(Date.now()*0.005)*5; }
+                else { col[i*3]=b*0.4; col[i*3+1]=b*0.9; col[i*3+2]=b; siz[i]=15 + (t.progress * 30); }
+            });
+            geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(siz, 1));
+            starPoints = new THREE.Points(geometry, new THREE.ShaderMaterial({
+                uniforms: { time: { value: 0.0 } },
+                vertexShader: `attribute float size; varying vec3 vColor; void main() { vColor = color; vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 ); gl_PointSize = size * ( 300.0 / -mvPosition.z ); gl_Position = projectionMatrix * mvPosition; }`,
+                fragmentShader: `varying vec3 vColor; void main() { float r = distance(gl_PointCoord, vec2(0.5)); if (r > 0.5) discard; gl_FragColor = vec4(vColor, 1.0 - (r * 2.0)); }`,
+                transparent: true, vertexColors: true, blending: THREE.AdditiveBlending
+            }));
+            scene.add(starPoints);
+            updateLabels();
+        }
+
+        function createLinks() {
+            while(linesGroup.children.length > 0) linesGroup.remove(linesGroup.children[0]);
+            const mat = new THREE.LineBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending });
+            for (let phase = 1; phase <= 5; phase++) {
+                const phaseTasks = tasks.filter(t => t.phase == phase);
+                for (let i = 0; i < phaseTasks.length - 1; i++) {
+                    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...phaseTasks[i].pos), new THREE.Vector3(...phaseTasks[i+1].pos)]);
+                    linesGroup.add(new THREE.Line(g, mat));
+                }
+            }
+            connections.forEach(([id1, id2]) => {
+                const t1=tasks.find(t=>t.id==id1), t2=tasks.find(t=>t.id==id2);
+                if(t1 && t2) { const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...t1.pos), new THREE.Vector3(...t2.pos)]); linesGroup.add(new THREE.Line(g, new THREE.LineBasicMaterial({color:0xffffff, opacity:0.15, transparent:true}))); }
+            });
+        }
+
+        function updateLabels() {
+            const container = document.getElementById('labels-container');
+            container.innerHTML = '';
+            tasks.forEach((task, i) => {
+                const div = document.createElement('div');
+                div.className = 'star-label'; div.id = `label-${task.id}`;
+                div.innerHTML = task.label + (task.assignedAgent ? ` <span class='agent-badge'>${task.assignedAgent.name}</span>` : '');
+                container.appendChild(div);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            camera.position.z += (targetCameraZ - camera.position.z) * 0.1;
+            const worldGroup = starPoints;
+            if (worldGroup) {
+                worldGroup.rotation.y += (targetRotation.y - worldGroup.rotation.y) * 0.1;
+                worldGroup.rotation.x += (targetRotation.x - worldGroup.rotation.x) * 0.1;
+                worldGroup.position.x += (targetTranslation.x - worldGroup.position.x) * 0.1;
+                worldGroup.position.y += (targetTranslation.y - worldGroup.position.y) * 0.1;
+                linesGroup.rotation.copy(worldGroup.rotation);
+                linesGroup.position.copy(worldGroup.position);
+            }
+
+            tasks.forEach(task => {
+                const vector = new THREE.Vector3(...task.pos);
+                vector.applyMatrix4(starPoints.matrixWorld); vector.project(camera);
+                const x = (vector.x * .5 + .5) * window.innerWidth; const y = (vector.y * -.5 + .5) * window.innerHeight;
+                const label = document.getElementById(`label-${task.id}`);
+                if (label) {
+                    label.style.left = `${x + 10}px`; label.style.top = `${y - 10}px`;
+                    const opacity = Math.max(0, Math.min(1, (1000 - camera.position.z) / 500));
+                    label.style.opacity = vector.z < 1 ? opacity : 0;
+                    label.style.display = vector.z < 1 ? 'block' : 'none';
+                    const isSel = tasks.indexOf(task) === selectedTaskIndex;
+                    label.style.color = isSel ? "cyan" : (task.assignedAgent ? "#f59e0b" : "rgba(255,255,255,0.7)");
+                    label.style.fontWeight = isSel ? "900" : "700";
+                    label.style.fontSize = isSel ? "12px" : "10px";
+                }
+            });
+            renderer.render(scene, camera);
+        }
+
+        window.resetCamera = () => { targetCameraZ = 60; targetRotation.x=0; targetRotation.y=0; targetTranslation.x=0; targetTranslation.y=0; deselectTask(); };
+        window.addNewTask = () => {
+            const l = document.getElementById('task-label').value; if(!l) return;
+            const p = parseInt(document.getElementById('task-phase').value);
+            const b = { 1:[-15,10,0], 2:[0,20,0], 3:[20,10,0], 4:[10,-15,0], 5:[-20,-15,0] }[p];
+            tasks.push({ id:Date.now(), label:l, phase:p, progress:0, pos:[b[0]+(Math.random()-0.5)*15, b[1]+(Math.random()-0.5)*15, (Math.random()-0.5)*15], assignedAgent:null });
+            document.getElementById('task-label').value=''; createStars(); createLinks(); updateUI();
+        };
+
+        function updateUI() { 
+            const avg = (tasks.reduce((acc, t) => acc + t.progress, 0) / tasks.length) * 100;
+            document.getElementById('global-progress').style.width = `${avg}%`;
+            document.getElementById('progress-text').innerText = `${Math.floor(avg)}% LUMINOSITÉ`;
+        }
+
+        function addLog(msg) {
+            const consoleEl = document.getElementById('status-console');
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="opacity-20 mr-2">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+            consoleEl.prepend(div);
+        }
+
+        window.closeOracle = () => document.getElementById('oracle-overlay').classList.add('hidden');
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+        
+        init();
+    </script>
+</body>
+</html>

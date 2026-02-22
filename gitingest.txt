@@ -1,0 +1,446 @@
+==============================================================================
+ STRAIGHT-PIPE OS V3.7 - REPOSITORY SOUVERAIN [TOP 1/1] 
+ MODULE : ui | FREQ : 3.41 MHz | ROLE : CLAUDE 
+ ARCHITECTURE : Knowledge-Augmented (KAL) & True Intelligence (TI) 
+==============================================================================
+
+--- DIRECTIVES CRITIQUES ---
+
+1. Tu es CLAUDE (HER.pdf). Ton code doit être immuable.
+2. Applique le KAL : Utilise la connaissance du domaine pour pénaliser le bruit.
+3. Vise la True Intelligence (TI) : Orchestration, pas Mimétisme.
+4. Zéro Latence (1/1). Protection absolue de Blue.
+
+--- STRUCTURE DU SYSTÈME ---
+
+.
+ -serena
+ - -semantic_scalpel.html
+ -nexus
+ - -resource_balance.html
+ - -TARDIS_KAPSO_ALPEIRON_Nexus_v5.jsx
+ - -package.json
+ - -vite.config.js
+ - -tailwind.config.js
+ - -postcss.config.js
+ - -index.html
+ - -src
+ - - -index.css
+ - - -main.jsx
+ - - -App.jsx
+ - -server.py
+ - -node_modules
+ - - -@vitejs
+ - - -autoprefixer
+ - - -postcss
+ - - -tailwindcss
+ - - -vite
+ - - -framer-motion
+ - - -lucide-react
+ - - -react
+ - - -react-dom
+ - - -recharts
+ - - -@babel
+ - - -@rolldown
+ - - -@types
+ - - -react-refresh
+ - - -browserslist
+ - - -caniuse-lite
+ - - -fraction.js
+ - - -picocolors
+ - - -postcss-value-parser
+ - - -nanoid
+ - - -source-map-js
+ - - -@alloc
+ - - -arg
+ - - -chokidar
+ - - -didyoumean
+ - - -dlv
+ - - -fast-glob
+ - - -glob-parent
+ - - -is-glob
+ - - -jiti
+ - - -lilconfig
+ - - -micromatch
+ - - -normalize-path
+ - - -object-hash
+ - - -postcss-import
+ - - -postcss-js
+ - - -postcss-load-config
+ - - -postcss-nested
+ - - -postcss-selector-parser
+ - - -resolve
+ - - -sucrase
+ - - -esbuild
+ - - -fdir
+ - - -picomatch
+ - - -rollup
+ - - -tinyglobby
+ - - -motion-dom
+ - - -motion-utils
+ - - -tslib
+ - - -scheduler
+ - - -clsx
+ - - -eventemitter3
+ - - -lodash
+ - - -react-is
+ - - -react-smooth
+ - - -recharts-scale
+ - - -tiny-invariant
+ - - -victory-vendor
+ - - -@jridgewell
+ - - -convert-source-map
+ - - -debug
+ - - -gensync
+ - - -json5
+ - - -semver
+ - - -baseline-browser-mapping
+ - - -electron-to-chromium
+ - - -node-releases
+ - - -update-browserslist-db
+ - - -anymatch
+ - - -braces
+ - - -is-binary-path
+ - - -readdirp
+ - - -@nodelib
+ - - -merge2
+ - - -is-extglob
+ - - -read-cache
+ - - -camelcase-css
+ - - -cssesc
+ - - -util-deprecate
+ - - -is-core-module
+ - - -path-parse
+ - - -supports-preserve-symlinks-flag
+ - - -commander
+ - - -lines-and-columns
+ - - -mz
+ - - -pirates
+ - - -ts-interface-checker
+ - - -@esbuild
+ - - -@rollup
+ - - -fast-equals
+ - - -prop-types
+ - - -react-transition-group
+ - - -decimal.js-light
+ - - -d3-array
+ - - -d3-ease
+ - - -d3-interpolate
+ - - -d3-scale
+ - - -d3-shape
+ - - -d3-time
+ - - -d3-timer
+ - - -js-tokens
+ - - -jsesc
+ - - -lru-cache
+ - - -ms
+ - - -escalade
+ - - -fill-range
+ - - -binary-extensions
+ - - -fastq
+ - - -pify
+ - - -hasown
+ - - -any-promise
+ - - -object-assign
+ - - -thenify-all
+ - - -loose-envify
+ - - -dom-helpers
+ - - -internmap
+ - - -d3-color
+ - - -d3-format
+ - - -d3-time-format
+ - - -d3-path
+ - - -yallist
+ - - -to-regex-range
+ - - -run-parallel
+ - - -reusify
+ - - -function-bind
+ - - -thenify
+ - - -csstype
+ - - -is-number
+ - - -queue-microtask
+ - -bun.lock
+ - -__pycache__
+ - - -server.cpython-313.pyc
+ - -dist
+ - - -assets
+ - - -index.html
+ -alexandria
+ - -member_pass.html
+ -ninja
+ - -module_repository.html
+ -ghost
+ - -stego_encoder.html
+ -chronicles
+ - -ledger.html
+ -mcp
+ - -fractal_monitor.html
+ -engine
+ - -cycle_engine.html
+ -starmap
+ - -todo_constellation.html
+ -converter
+ - -stream_converter.html
+ -cinema
+ - -filmmaker_orchestrator.html
+ -neural
+ - -neural_synapse_monitor.html
+ - -topology.html
+ -quantum
+ - -entanglement_dashboard.html
+ -bio
+ - -digital_heartbeat.html
+ -void
+ - -black_hole.html
+ - -quantum_singularity.html
+ - -void_terminal.html
+ -spectral
+ - -frequency_analyzer.html
+ -oracle
+ - -scrying_pool.html
+ -security
+ - -vault_dashboard.html
+ -hive
+ - -data_hive.html
+ -gravity
+ - -gravity_well.html
+ -radar
+ - -pulse_radar.html
+ -dna
+ - -sequencer.html
+ -comms
+ - -satellite_uplink.html
+ -entropy
+ - -lava_lamp.html
+ -archive
+ - -holo_archive.html
+ -weather
+ - -predictor.html
+ -failsafe
+ - -circuit_breaker.html
+ -virtual-desktop
+ - -src
+ - - -App.jsx
+ - - -main.jsx
+ - - -index.css
+ - -node_modules
+ - - -@babel
+ - - -@jridgewell
+ - - -@types
+ - - -@emotion
+ - - -@nodelib
+ - - -@esbuild
+ - - -@vitejs
+ - - -autoprefixer
+ - - -@rolldown
+ - - -@alloc
+ - - -postcss
+ - - -react
+ - - -react-dom
+ - - -tailwindcss
+ - - -vite
+ - - -react-refresh
+ - - -convert-source-map
+ - - -framer-motion
+ - - -debug
+ - - -gensync
+ - - -json5
+ - - -semver
+ - - -picocolors
+ - - -lru-cache
+ - - -caniuse-lite
+ - - -postcss-value-parser
+ - - -electron-to-chromium
+ - - -fraction.js
+ - - -baseline-browser-mapping
+ - - -update-browserslist-db
+ - - -ms
+ - - -tslib
+ - - -yallist
+ - - -nanoid
+ - - -source-map-js
+ - - -node-releases
+ - - -scheduler
+ - - -loose-envify
+ - - -arg
+ - - -didyoumean
+ - - -dlv
+ - - -is-glob
+ - - -jiti
+ - - -lilconfig
+ - - -micromatch
+ - - -normalize-path
+ - - -object-hash
+ - - -postcss-import
+ - - -postcss-js
+ - - -postcss-load-config
+ - - -postcss-nested
+ - - -postcss-selector-parser
+ - - -resolve
+ - - -braces
+ - - -anymatch
+ - - -is-binary-path
+ - - -readdirp
+ - - -picomatch
+ - - -sucrase
+ - - -merge2
+ - - -fastq
+ - - -run-parallel
+ - - -reusify
+ - - -binary-extensions
+ - - -fill-range
+ - - -is-extglob
+ - - -read-cache
+ - - -camelcase-css
+ - - -cssesc
+ - - -util-deprecate
+ - - -pify
+ - - -is-core-module
+ - - -path-parse
+ - - -supports-preserve-symlinks-flag
+ - - -hasown
+ - - -function-bind
+ - - -queue-microtask
+ - - -commander
+ - - -mz
+ - - -lines-and-columns
+ - - -pirates
+ - - -jsesc
+ - - -js-tokens
+ - - -to-regex-range
+ - - -object-assign
+ - - -any-promise
+ - - -ts-interface-checker
+ - - -thenify
+ - - -thenify-all
+ - - -fdir
+ - - -is-number
+ - - -esbuild
+ - - -escalade
+ - - -rollup
+ - - -lucide-react
+ - - -glob-parent
+ - - -chokidar
+ - - -tinyglobby
+ - - -browserslist
+ - - -fast-glob
+ - -tailwind.config.js
+ - -postcss.config.js
+ - -index.html
+ - -vite.config.js
+ - -package.json
+ - -package-lock.json
+ -straight-pipe-os
+ - -src
+ - - -App.jsx
+ - - -main.jsx
+ - - -index.css
+ - -node_modules
+ - - -@babel
+ - - -@jridgewell
+ - - -@types
+ - - -@emotion
+ - - -@nodelib
+ - - -@esbuild
+ - - -@vitejs
+ - - -lucide-react
+ - - -@rolldown
+ - - -@alloc
+ - - -postcss
+ - - -react
+ - - -autoprefixer
+ - - -react-dom
+ - - -tailwindcss
+ - - -vite
+ - - -react-refresh
+ - - -convert-source-map
+ - - -debug
+ - - -gensync
+ - - -json5
+ - - -semver
+ - - -js-tokens
+ - - -picocolors
+ - - -jsesc
+ - - -browserslist
+ - - -lru-cache
+ - - -caniuse-lite
+ - - -baseline-browser-mapping
+ - - -electron-to-chromium
+ - - -node-releases
+ - - -update-browserslist-db
+ - - -ms
+ - - -tslib
+ - - -yallist
+ - - -nanoid
+ - - -source-map-js
+ - - -loose-envify
+ - - -scheduler
+ - - -fraction.js
+ - - -dlv
+ - - -glob-parent
+ - - -postcss-value-parser
+ - - -is-glob
+ - - -lilconfig
+ - - -micromatch
+ - - -normalize-path
+ - - -object-hash
+ - - -postcss-import
+ - - -postcss-js
+ - - -arg
+ - - -postcss-load-config
+ - - -postcss-nested
+ - - -postcss-selector-parser
+ - - -resolve
+ - - -sucrase
+ - - -anymatch
+ - - -braces
+ - - -is-binary-path
+ - - -readdirp
+ - - -picomatch
+ - - -fill-range
+ - - -merge2
+ - - -didyoumean
+ - - -run-parallel
+ - - -to-regex-range
+ - - -binary-extensions
+ - - -jiti
+ - - -is-extglob
+ - - -read-cache
+ - - -fastq
+ - - -util-deprecate
+ - - -pify
+ - - -is-core-module
+ - - -camelcase-css
+ - - -supports-preserve-symlinks-flag
+ - - -function-bind
+ - - -queue-microtask
+ - - -commander
+ - - -hasown
+ - - -lines-and-columns
+ - - -mz
+ - - -pirates
+ - - -ts-interface-checker
+ - - -any-promise
+ - - -object-assign
+ - - -thenify-all
+ - - -thenify
+ - - -fdir
+ - - -escalade
+ - - -is-number
+ - - -esbuild
+ - - -rollup
+ - - -cssesc
+ - - -path-parse
+ - - -reusify
+ - - -chokidar
+ - - -fast-glob
+ - - -tinyglobby
+ - - -framer-motion
+ - -tailwind.config.js
+ - -postcss.config.js
+ - -index.html
+ - -vite.config.js
+ - -package.json
+ - -package-lock.json
+ -START_ALEXANDRIA_SYSTEMS.sh
+ -gitingest.txt

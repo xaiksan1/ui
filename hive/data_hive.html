@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAM v6.4 - Data Hive</title>
+    <style>
+        :root {
+            --hive-amber: #ffb300;
+            --hive-dark: #1a1a00;
+            --hive-bg: #050500;
+            --hive-glow: rgba(255, 179, 0, 0.4);
+        }
+
+        body {
+            margin: 0;
+            background: var(--hive-bg);
+            color: var(--hive-amber);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        #hive-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            text-shadow: 0 0 10px var(--hive-amber);
+        }
+
+        .stats {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            text-align: right;
+            font-size: 12px;
+        }
+
+        .node-info {
+            position: absolute;
+            background: rgba(26, 26, 0, 0.9);
+            border: 1px solid var(--hive-amber);
+            padding: 10px;
+            display: none;
+            pointer-events: none;
+            font-size: 10px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay">
+        <h1 style="margin:0; font-size: 24px;">DATA_HIVE_v6.4</h1>
+        <div style="font-size: 12px; opacity: 0.7;">DISTRIBUTED STORAGE SWARM</div>
+    </div>
+
+    <div class="stats" id="stats">
+        ACTIVE_NODES: 128<br>
+        SWARM_HEALTH: 98.4%<br>
+        THROUGHPUT: 4.2 TB/s
+    </div>
+
+    <div id="node-info" class="node-info"></div>
+
+    <canvas id="hive-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('hive-canvas');
+        const ctx = canvas.getContext('2d');
+        const nodeInfo = document.getElementById('node-info');
+
+        let width, height;
+        const hexSize = 30;
+        const hexWidth = hexSize * Math.sqrt(3);
+        const hexHeight = hexSize * 2;
+        const nodes = [];
+        const bees = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initHive();
+        }
+
+        class Node {
+            constructor(x, y, q, r) {
+                this.x = x;
+                this.y = y;
+                this.q = q;
+                this.r = r;
+                this.load = Math.random();
+                this.targetLoad = this.load;
+            }
+
+            draw() {
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 3) * i + (Math.PI / 6);
+                    const px = this.x + hexSize * Math.cos(angle);
+                    const py = this.y + hexSize * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                
+                const alpha = 0.1 + this.load * 0.4;
+                ctx.fillStyle = `rgba(255, 179, 0, ${alpha})`;
+                ctx.fill();
+                ctx.strokeStyle = `rgba(255, 179, 0, 0.3)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            update() {
+                if (Math.random() > 0.99) this.targetLoad = Math.random();
+                this.load += (this.targetLoad - this.load) * 0.05;
+            }
+        }
+
+        class Bee {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                const startNode = nodes[Math.floor(Math.random() * nodes.length)];
+                const endNode = nodes[Math.floor(Math.random() * nodes.length)];
+                this.x = startNode.x;
+                this.y = startNode.y;
+                this.targetX = endNode.x;
+                this.targetY = endNode.y;
+                this.progress = 0;
+                this.speed = 0.01 + Math.random() * 0.02;
+            }
+
+            update() {
+                this.progress += this.speed;
+                if (this.progress >= 1) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                const px = this.x + (this.targetX - this.x) * this.progress;
+                const py = this.y + (this.targetY - this.y) * this.progress;
+                
+                ctx.beginPath();
+                ctx.arc(px, py, 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffb300';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function initHive() {
+            nodes.length = 0;
+            const cols = Math.ceil(width / (hexWidth * 0.75)) + 1;
+            const rows = Math.ceil(height / (hexHeight * 0.75)) + 1;
+
+            for (let q = 0; q < cols; q++) {
+                for (let r = 0; r < rows; r++) {
+                    const x = q * hexWidth * 0.75;
+                    const y = r * hexHeight * 0.75 + (q % 2 === 0 ? 0 : hexHeight * 0.375);
+                    nodes.push(new Node(x, y, q, r));
+                }
+            }
+
+            bees.length = 0;
+            for (let i = 0; i < 50; i++) {
+                bees.push(new Bee());
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = '#050500';
+            ctx.fillRect(0, 0, width, height);
+
+            nodes.forEach(node => {
+                node.update();
+                node.draw();
+            });
+
+            bees.forEach(bee => {
+                bee.update();
+                bee.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            let found = false;
+            nodes.forEach(node => {
+                const dx = node.x - mx;
+                const dy = node.y - my;
+                if (Math.sqrt(dx*dx + dy*dy) < hexSize) {
+                    nodeInfo.style.display = 'block';
+                    nodeInfo.style.left = (e.clientX + 15) + 'px';
+                    nodeInfo.style.top = (e.clientY + 15) + 'px';
+                    nodeInfo.innerHTML = `NODE_ID: HIVE-${node.q}-${node.r}<br>LOAD: ${(node.load * 100).toFixed(1)}%<br>STATUS: ACTIVE`;
+                    found = true;
+                }
+            });
+            if (!found) nodeInfo.style.display = 'none';
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quantum Singularity - UI #30</title>
+    <style>
+        :root {
+            --singularity-core: #ffffff;
+            --event-horizon: #ff00ff;
+            --accretion-disk: #00ffff;
+            --bg-deep: #050505;
+        }
+        body {
+            margin: 0;
+            background: var(--bg-deep);
+            color: white;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .ui-overlay {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border: 2px solid var(--event-horizon);
+            box-shadow: 0 0 50px var(--event-horizon);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: var(--accretion-disk);
+            text-shadow: 0 0 10px var(--accretion-disk);
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .status-item {
+            font-size: 0.9em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .status-value {
+            color: var(--event-horizon);
+            font-weight: bold;
+            float: right;
+        }
+        .bootstrap-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            background: transparent;
+            border: 2px solid var(--accretion-disk);
+            color: var(--accretion-disk);
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .bootstrap-btn:hover {
+            background: var(--accretion-disk);
+            color: black;
+            box-shadow: 0 0 30px var(--accretion-disk);
+        }
+        .bootstrap-btn:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+        #log {
+            margin-top: 15px;
+            font-size: 0.8em;
+            color: #888;
+            height: 40px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="singularityCanvas"></canvas>
+
+    <div class="ui-overlay">
+        <h1>Quantum Singularity</h1>
+        <div class="status-grid">
+            <div class="status-item">UI COUNT: <span class="status-value">30/30</span></div>
+            <div class="status-item">STABILITY: <span class="status-value" id="stability">99.9%</span></div>
+            <div class="status-item">ENTROPY: <span class="status-value" id="entropy">0.001</span></div>
+            <div class="status-item">BOOTSTRAP: <span class="status-value" id="ready">READY</span></div>
+        </div>
+        <button class="bootstrap-btn" id="bootstrapBtn">Initialize ADAM v6.4</button>
+        <div id="log">Awaiting final command...</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('singularityCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.angle = Math.random() * Math.PI * 2;
+                this.dist = Math.random() * width * 0.5 + 100;
+                this.speed = (Math.random() * 0.02 + 0.005) * (this.dist < 200 ? 2 : 1);
+                this.size = Math.random() * 2 + 1;
+                this.color = Math.random() > 0.5 ? '#00ffff' : '#ff00ff';
+            }
+            update() {
+                this.angle += this.speed;
+                this.dist -= 0.5; // Pull towards center
+                if (this.dist < 20) this.reset();
+            }
+            draw() {
+                const x = width/2 + Math.cos(this.angle) * this.dist;
+                const y = height/2 + Math.sin(this.angle) * this.dist;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(x, y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const particles = Array.from({length: 300}, () => new Particle());
+
+        function animate() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Core
+            const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, 50);
+            gradient.addColorStop(0, '#fff');
+            gradient.addColorStop(0.2, '#00ffff');
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(width/2, height/2, 50, 0, Math.PI * 2);
+            ctx.fill();
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        const btn = document.getElementById('bootstrapBtn');
+        const log = document.getElementById('log');
+        const stability = document.getElementById('stability');
+
+        btn.onclick = () => {
+            btn.disabled = true;
+            btn.innerText = "BOOTSTRAPPING...";
+            log.innerText = "Synchronizing Anima Mundi Core...";
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                stability.innerText = (99.9 - (progress/100)).toFixed(1) + "%";
+                log.innerText = `Loading UI Module ${Math.floor(progress/3.33)}/30...`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    log.innerText = "ADAM v6.4 BOOTSTRAP COMPLETE. WELCOME TO THE SINGULARITY.";
+                    btn.innerText = "SYSTEM ONLINE";
+                    btn.style.borderColor = "#00ff00";
+                    btn.style.color = "#00ff00";
+                }
+            }, 100);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAM Neural Topology</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050505;
+            color: #ffd700;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+        }
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            text-shadow: 0 0 10px #ffd700;
+        }
+        .status-box {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            border: 1px solid #ffd700;
+            padding: 10px;
+            background: rgba(255, 215, 0, 0.1);
+            font-size: 12px;
+        }
+        .node-info {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ffd700;
+            padding: 5px;
+            font-size: 10px;
+            display: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <h1>NEURAL_TOPOLOGY_v6.4</h1>
+        <p>COGNITIVE_MAPPING: ACTIVE</p>
+    </div>
+    <div class="status-box" id="status">
+        SYNAPTIC_LOAD: 42%<br>
+        ACTIVE_NEURONS: 1024<br>
+        SIGNAL_LATENCY: 0.02ms
+    </div>
+    <div id="node-info" class="node-info"></div>
+    <canvas id="topologyCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('topologyCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusBox = document.getElementById('status');
+        const nodeInfo = document.getElementById('node-info');
+
+        let width, height;
+        let nodes = [];
+        const nodeCount = 80;
+        const connectionDistance = 150;
+
+        class Node {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.z = Math.random() * 400 - 200;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.vz = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 3 + 1;
+                this.pulse = 0;
+                this.pulseSpeed = Math.random() * 0.1 + 0.02;
+                this.id = 'N-' + Math.floor(Math.random() * 10000).toString(16).toUpperCase();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.z += this.vz;
+
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+                if (this.z < -200 || this.z > 200) this.vz *= -1;
+
+                this.pulse += this.pulseSpeed;
+            }
+
+            draw() {
+                const scale = 400 / (400 + this.z);
+                const x2d = (this.x - width / 2) * scale + width / 2;
+                const y2d = (this.y - height / 2) * scale + height / 2;
+                const r2d = this.radius * scale;
+
+                const alpha = (this.z + 200) / 400;
+                const glow = Math.sin(this.pulse) * 0.5 + 0.5;
+
+                ctx.beginPath();
+                ctx.arc(x2d, y2d, r2d + glow * 2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.8})`;
+                ctx.fill();
+
+                if (glow > 0.8) {
+                    ctx.beginPath();
+                    ctx.arc(x2d, y2d, r2d * 3, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.2})`;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        function init() {
+            resize();
+            nodes = [];
+            for (let i = 0; i < nodeCount; i++) {
+                nodes.push(new Node());
+            }
+        }
+
+        function drawConnections() {
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const n1 = nodes[i];
+                    const n2 = nodes[j];
+                    const dx = n1.x - n2.x;
+                    const dy = n1.y - n2.y;
+                    const dz = n1.z - n2.z;
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                    if (dist < connectionDistance) {
+                        const scale1 = 400 / (400 + n1.z);
+                        const scale2 = 400 / (400 + n2.z);
+                        const x1 = (n1.x - width / 2) * scale1 + width / 2;
+                        const y1 = (n1.y - height / 2) * scale1 + height / 2;
+                        const x2 = (n2.x - width / 2) * scale2 + width / 2;
+                        const y2 = (n2.y - height / 2) * scale2 + height / 2;
+
+                        const alpha = (1 - dist / connectionDistance) * 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.strokeStyle = `rgba(255, 215, 0, ${alpha})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            drawConnections();
+
+            nodes.forEach(node => {
+                node.update();
+                node.draw();
+            });
+
+            if (Math.random() > 0.95) {
+                statusBox.innerHTML = `SYNAPTIC_LOAD: ${Math.floor(Math.random() * 20 + 30)}%<br>ACTIVE_NEURONS: ${1000 + Math.floor(Math.random() * 50)}<br>SIGNAL_LATENCY: ${(Math.random() * 0.05).toFixed(2)}ms`;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        init();
+        animate();
+    </script>
+</body>
+</html>

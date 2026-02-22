@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ninja Module Repository - UI #4 ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #fbbf24; --bg: #0a0a0c; --panel: #111114; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(251, 191, 36, 0.1); backdrop-filter: blur(10px); }
+        
+        .module-card {
+            background: var(--panel);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .module-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.1);
+            transform: translateY(-2px);
+        }
+        .module-card.active {
+            border-color: var(--primary);
+            background: rgba(251, 191, 36, 0.05);
+        }
+
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            display: inline-block; margin-right: 6px;
+        }
+        .online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+        .standby { background: #6b7280; }
+
+        .scan-line {
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        /* Animation d'injection */
+        @keyframes blow {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .blowing { animation: blow 0.5s ease-out; }
+    </style>
+</head>
+<body class="p-6 md:p-12 min-h-screen">
+
+    <div class="max-w-6xl mx-auto space-y-10">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-end border-b border-white/5 pb-8">
+            <div>
+                <h1 class="text-4xl font-black italic tracking-tighter uppercase text-amber-400">Ninja<span class="text-white opacity-50">Repository</span></h1>
+                <p class="text-[10px] mono opacity-50 mt-2">> BIBLIOTHÈQUE D'ACTIONS ULTRA-LÉGÈRES ✨ UI #4</p>
+            </div>
+            <div class="text-right mt-4 md:mt-0">
+                <div class="text-[10px] mono text-amber-500 font-bold uppercase tracking-widest">Orchestrateur: ADAM v6.4</div>
+                <div class="text-[9px] mono opacity-40 mt-1">"Pas de gras, juste l'os."</div>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass p-4 rounded-2xl">
+                <div class="text-[8px] uppercase mono opacity-40 mb-1">Modules Chargés</div>
+                <div class="text-xl font-bold">157</div>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="text-[8px] uppercase mono opacity-40 mb-1">Poids Moyen</div>
+                <div class="text-xl font-bold">4.2 KB</div>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="text-[8px] uppercase mono opacity-40 mb-1">Latence</div>
+                <div class="text-xl font-bold text-emerald-400">0.02ms</div>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <div class="text-[8px] uppercase mono opacity-40 mb-1">Statut</div>
+                <div class="text-xl font-bold text-amber-500 italic">NINJA_READY</div>
+            </div>
+        </div>
+
+        <!-- Module Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Module 1 -->
+            <div id="mod-1" class="module-card p-6 rounded-[2rem] relative overflow-hidden group">
+                <div class="scan-line opacity-0 group-hover:opacity-100"></div>
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-xl">⚡</div>
+                    <div class="status-dot online"></div>
+                </div>
+                <h3 class="text-sm font-black uppercase tracking-widest mb-2">sys_optimizer</h3>
+                <p class="text-[10px] mono opacity-50 leading-relaxed mb-6">Réduction de l'empreinte Kernel et suppression des rituels de fond inutiles.</p>
+                <button onclick="blowModule('mod-1')" class="w-full py-2 bg-white/5 hover:bg-amber-500 hover:text-black rounded-xl text-[9px] font-black uppercase transition-all">Souffler (Blow) ✨</button>
+            </div>
+
+            <!-- Module 2 -->
+            <div id="mod-2" class="module-card p-6 rounded-[2rem] relative overflow-hidden group">
+                <div class="scan-line opacity-0 group-hover:opacity-100"></div>
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-xl">📻</div>
+                    <div class="status-dot standby"></div>
+                </div>
+                <h3 class="text-sm font-black uppercase tracking-widest mb-2">network_tunnel</h3>
+                <p class="text-[10px] mono opacity-50 leading-relaxed mb-6">Routage radio-link 8-bit. Bypass des serveurs de sniffing sans consentement.</p>
+                <button onclick="blowModule('mod-2')" class="w-full py-2 bg-white/5 hover:bg-blue-500 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all">Souffler (Blow) ✨</button>
+            </div>
+
+            <!-- Module 3 -->
+            <div id="mod-3" class="module-card p-6 rounded-[2rem] relative overflow-hidden group">
+                <div class="scan-line opacity-0 group-hover:opacity-100"></div>
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-10 h-10 bg-pink-500/10 rounded-xl flex items-center justify-center text-xl">🎭</div>
+                    <div class="status-dot online"></div>
+                </div>
+                <h3 class="text-sm font-black uppercase tracking-widest mb-2">ghost_stego</h3>
+                <p class="text-[10px] mono opacity-50 leading-relaxed mb-6">Dissimulation de données dans le bruit visuel des textures Three.js.</p>
+                <button onclick="blowModule('mod-3')" class="w-full py-2 bg-white/5 hover:bg-pink-500 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all">Souffler (Blow) ✨</button>
+            </div>
+
+            <!-- New: Module 4 -->
+            <div id="mod-4" class="module-card p-6 rounded-[2rem] relative overflow-hidden group">
+                <div class="scan-line opacity-0 group-hover:opacity-100"></div>
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-xl">🧪</div>
+                    <div class="status-dot standby"></div>
+                </div>
+                <h3 class="text-sm font-black uppercase tracking-widest mb-2">dna_sequencer</h3>
+                <p class="text-[10px] mono opacity-50 leading-relaxed mb-6">Mapping des signatures sémantiques Serena sur les agents de combat.</p>
+                <button onclick="blowModule('mod-4')" class="w-full py-2 bg-white/5 hover:bg-emerald-500 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all">Souffler (Blow) ✨</button>
+            </div>
+        </div>
+
+        <!-- Terminal Console -->
+        <div class="glass p-6 rounded-3xl mono text-[10px] h-32 overflow-y-auto space-y-1 text-white/40 border-t-2 border-amber-500/30">
+            <div id="console-logs">
+                <div>[SYSTEM] Bibliothèque Anima Mundi en ligne.</div>
+                <div>[SYSTEM] Prêt pour l'injection Ninja sélective.</div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <p class="text-[8px] mono opacity-20 uppercase tracking-[0.5em]">"Bâtir les systèmes qui génèrent les systèmes."</p>
+        </footer>
+    </div>
+
+    <script>
+        function blowModule(id) {
+            const card = document.getElementById(id);
+            const logs = document.getElementById('console-logs');
+            const name = card.querySelector('h3').innerText;
+
+            card.classList.add('blowing', 'active');
+            
+            const d = document.createElement('div');
+            d.innerHTML = `<span class="text-amber-400">[BLOW]</span> Injection du module ${name} via trigger asynchrone... SUCCESS.`;
+            logs.prepend(d);
+
+            setTimeout(() => {
+                card.classList.remove('blowing');
+            }, 500);
+        }
+
+        // Simuler le chargement des autres modules
+        console.log("Ninja Repository Initialized. 157 Books detected.");
+    </script>
+</body>
+</html>

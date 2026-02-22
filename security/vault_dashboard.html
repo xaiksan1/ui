@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAM v6.4 - Cyber-Security Vault</title>
+    <style>
+        :root {
+            --vault-red: #ff0033;
+            --vault-dark: #1a0005;
+            --vault-metal: #2c2c2c;
+            --vault-glow: rgba(255, 0, 51, 0.5);
+        }
+
+        body {
+            margin: 0;
+            background: var(--vault-dark);
+            color: var(--vault-red);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #vault-container {
+            width: 800px;
+            height: 600px;
+            border: 4px solid var(--vault-metal);
+            background: #0a0a0a;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,1), inset 0 0 20px var(--vault-glow);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--vault-red);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .threat-level {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            flex-grow: 1;
+        }
+
+        .panel {
+            border: 1px solid var(--vault-red);
+            background: rgba(255, 0, 51, 0.05);
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            position: absolute;
+            top: 0;
+            left: 10px;
+            background: var(--vault-dark);
+            padding: 0 5px;
+            font-size: 12px;
+            transform: translateY(-50%);
+        }
+
+        #log-display {
+            font-size: 10px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .vault-door {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--vault-metal);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 2s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+
+        .vault-door.open {
+            transform: translateX(100%);
+        }
+
+        .vault-wheel {
+            width: 200px;
+            height: 200px;
+            border: 10px solid #444;
+            border-radius: 50%;
+            position: relative;
+            animation: rotate 10s linear infinite;
+        }
+
+        .vault-wheel::before, .vault-wheel::after {
+            content: '';
+            position: absolute;
+            background: #444;
+        }
+
+        .vault-wheel::before { width: 100%; height: 10px; top: 50%; left: 0; margin-top: -5px; }
+        .vault-wheel::after { height: 100%; width: 10px; left: 50%; top: 0; margin-left: -5px; }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .lockdown-btn {
+            background: var(--vault-red);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 0 15px var(--vault-glow);
+        }
+
+        .lockdown-btn:active {
+            transform: scale(0.95);
+        }
+
+        #gauge-container {
+            height: 150px;
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .gauge-bar {
+            flex: 1;
+            background: var(--vault-red);
+            transition: height 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="vault-container">
+        <div id="door" class="vault-door">
+            <div class="vault-wheel"></div>
+            <div style="position: absolute; bottom: 50px; color: #666;">ACCESSING SECURE VAULT...</div>
+        </div>
+
+        <div class="header">
+            <div>VAULT_ID: ADAM-SEC-018</div>
+            <div class="threat-level" id="threat-status">THREAT LEVEL: LOW</div>
+            <div>STATUS: ARMED</div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-title">INTRUSION_LOG</div>
+                <div id="log-display"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">FIREWALL_TRAFFIC</div>
+                <div id="gauge-container">
+                    <!-- Bars generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-top: 20px; height: 100px;">
+            <div class="panel-title">ENCRYPTION_KEYS</div>
+            <div id="keys-display" style="font-size: 12px; letter-spacing: 2px;"></div>
+        </div>
+
+        <button class="lockdown-btn" onclick="triggerLockdown()">EMERGENCY LOCKDOWN</button>
+    </div>
+
+    <script>
+        const logDisplay = document.getElementById('log-display');
+        const threatStatus = document.getElementById('threat-status');
+        const gaugeContainer = document.getElementById('gauge-container');
+        const keysDisplay = document.getElementById('keys-display');
+        const door = document.getElementById('door');
+
+        // Open door after delay
+        setTimeout(() => {
+            door.classList.add('open');
+        }, 1500);
+
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            logDisplay.innerHTML = `[${time}] ${msg}\n` + logDisplay.innerHTML;
+        }
+
+        function updateGauges() {
+            gaugeContainer.innerHTML = '';
+            for(let i=0; i<20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'gauge-bar';
+                bar.style.height = Math.random() * 100 + '%';
+                bar.style.opacity = 0.3 + Math.random() * 0.7;
+                gaugeContainer.appendChild(bar);
+            }
+        }
+
+        function updateKeys() {
+            let key = '';
+            const chars = 'ABCDEF0123456789';
+            for(let i=0; i<64; i++) {
+                key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            keysDisplay.innerText = key;
+        }
+
+        function triggerLockdown() {
+            door.classList.remove('open');
+            threatStatus.innerText = "THREAT LEVEL: CRITICAL";
+            threatStatus.style.color = "white";
+            document.body.style.background = "red";
+            addLog("!!! EMERGENCY LOCKDOWN INITIATED !!!");
+            setTimeout(() => {
+                document.body.style.background = "#1a0005";
+            }, 500);
+        }
+
+        setInterval(() => {
+            const events = [
+                "Port scan detected from 192.168.1.45",
+                "SSH brute force attempt blocked",
+                "Firewall rule #452 updated",
+                "Packet inspection: CLEAN",
+                "DDoS mitigation active",
+                "Unauthorized access attempt: REJECTED"
+            ];
+            addLog(events[Math.floor(Math.random() * events.length)]);
+            
+            const levels = ["LOW", "GUARDED", "ELEVATED", "HIGH"];
+            if(Math.random() > 0.8) {
+                threatStatus.innerText = "THREAT LEVEL: " + levels[Math.floor(Math.random() * levels.length)];
+            }
+
+            updateGauges();
+            updateKeys();
+        }, 2000);
+
+        updateGauges();
+        updateKeys();
+        addLog("Vault system initialized.");
+    </script>
+</body>
+</html>

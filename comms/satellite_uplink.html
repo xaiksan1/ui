@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAM Satellite Uplink</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000510;
+            color: #00d4ff;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+        }
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            text-shadow: 0 0 10px #00d4ff;
+        }
+        .comms-log {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
+            height: 150px;
+            border: 1px solid #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+            padding: 10px;
+            font-size: 10px;
+            overflow: hidden;
+        }
+        .signal-strength {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+        .bar {
+            display: inline-block;
+            width: 5px;
+            background: #00d4ff;
+            margin-left: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <h1>SATELLITE_UPLINK_v6.4</h1>
+        <p>STATUS: SYNCHRONIZING_ORBIT</p>
+    </div>
+    <div class="signal-strength" id="signal">
+        SIGNAL: 98% <br>
+        <div class="bar" style="height: 10px"></div>
+        <div class="bar" style="height: 15px"></div>
+        <div class="bar" style="height: 20px"></div>
+        <div class="bar" style="height: 25px"></div>
+    </div>
+    <div class="comms-log" id="log">
+        [00:00:01] INITIALIZING UPLINK...<br>
+        [00:00:02] SCANNING FOR SAT-01...<br>
+        [00:00:03] HANDSHAKE SUCCESSFUL.<br>
+    </div>
+    <canvas id="uplinkCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('uplinkCanvas');
+        const ctx = canvas.getContext('2d');
+        const log = document.getElementById('log');
+
+        let width, height;
+        let satellites = [];
+        let groundStations = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        class Satellite {
+            constructor(id, orbitRadius, speed, angle) {
+                this.id = id;
+                this.orbitRadius = orbitRadius;
+                this.speed = speed;
+                this.angle = angle;
+                this.x = 0;
+                this.y = 0;
+            }
+
+            update() {
+                this.angle += this.speed;
+                this.x = width / 2 + Math.cos(this.angle) * this.orbitRadius;
+                this.y = height / 2 + Math.sin(this.angle) * this.orbitRadius * 0.5;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#00d4ff';
+                ctx.fill();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#00d4ff';
+                
+                ctx.font = '10px Courier New';
+                ctx.fillText(this.id, this.x + 10, this.y - 10);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class GroundStation {
+            constructor(name, x, y) {
+                this.name = name;
+                this.x = x;
+                this.y = y;
+                this.pulse = 0;
+            }
+
+            draw() {
+                this.pulse += 0.05;
+                const r = Math.abs(Math.sin(this.pulse)) * 10;
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(0, 212, 255, ${1 - (r/10)})`;
+                ctx.stroke();
+
+                ctx.font = '8px Courier New';
+                ctx.fillText(this.name, this.x + 5, this.y + 5);
+            }
+        }
+
+        function init() {
+            resize();
+            satellites = [
+                new Satellite('ADAM-SAT-01', 250, 0.005, 0),
+                new Satellite('ADAM-SAT-02', 300, -0.003, Math.PI),
+                new Satellite('ADAM-SAT-03', 350, 0.002, Math.PI / 2)
+            ];
+            groundStations = [
+                new GroundStation('BASE_ALPHA', width * 0.3, height * 0.4),
+                new GroundStation('BASE_BETA', width * 0.7, height * 0.6),
+                new GroundStation('BASE_GAMMA', width * 0.5, height * 0.2)
+            ];
+        }
+
+        function drawEarth() {
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, 150, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Grid lines
+            ctx.beginPath();
+            for(let i=0; i<10; i++) {
+                ctx.ellipse(width/2, height/2, 150, 150 * (i/10), 0, 0, Math.PI * 2);
+            }
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
+            ctx.stroke();
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 5, 16, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            drawEarth();
+
+            groundStations.forEach(gs => gs.draw());
+            satellites.forEach(sat => {
+                sat.update();
+                sat.draw();
+
+                // Draw beams to ground stations
+                groundStations.forEach(gs => {
+                    const dist = Math.hypot(sat.x - gs.x, sat.y - gs.y);
+                    if (dist < 400) {
+                        ctx.beginPath();
+                        ctx.moveTo(sat.x, sat.y);
+                        ctx.lineTo(gs.x, gs.y);
+                        ctx.strokeStyle = `rgba(0, 212, 255, ${0.1 * (1 - dist/400)})`;
+                        ctx.setLineDash([5, 5]);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                });
+            });
+
+            if (Math.random() > 0.98) {
+                const time = new Date().toLocaleTimeString();
+                log.innerHTML += `[${time}] DATA_PACKET_RECEIVED FROM ${satellites[Math.floor(Math.random()*3)].id}<br>`;
+                if (log.scrollHeight > log.clientHeight) {
+                    log.scrollTop = log.scrollHeight;
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        init();
+        animate();
+    </script>
+</body>
+</html>

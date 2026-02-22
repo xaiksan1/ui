@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAM - Spectral Frequency Analyzer</title>
+    <style>
+        body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        canvas { width: 100vw; height: 100vh; display: block; }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 40, 0, 0.7);
+            border: 1px solid #0f0;
+            padding: 15px;
+            pointer-events: none;
+        }
+        .bar { height: 2px; background: #0f0; margin-bottom: 1px; }
+    </style>
+</head>
+<body>
+    <canvas id="spectralCanvas"></canvas>
+    <div id="ui-layer">
+        <h2>SPECTRAL ANALYZER</h2>
+        <div>RANGE: 20Hz - 22kHz</div>
+        <div>SENSITIVITY: +12dB</div>
+        <div id="bars-container" style="width: 200px; margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('spectralCanvas');
+        const ctx = canvas.getContext('2d');
+        const barsContainer = document.getElementById('bars-container');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const numBars = 64;
+        const data = new Array(numBars).fill(0);
+        const history = [];
+
+        for(let i=0; i<10; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            barsContainer.appendChild(bar);
+        }
+
+        function animate() {
+            // Shift history
+            const currentFrame = new Array(numBars);
+            for(let i=0; i<numBars; i++) {
+                data[i] = Math.max(0, Math.min(255, data[i] + (Math.random() - 0.5) * 50));
+                // Add some "peaks"
+                if (Math.random() > 0.95) data[i] = 200 + Math.random() * 55;
+                currentFrame[i] = data[i];
+            }
+            history.unshift(currentFrame);
+            if (history.length > canvas.height / 2) history.pop();
+
+            // Draw waterfall
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const barWidth = canvas.width / numBars;
+            for(let y=0; y<history.length; y++) {
+                for(let x=0; x<numBars; x++) {
+                    const val = history[y][x];
+                    const hue = (val / 255) * 120; // 0 (red) to 120 (green)
+                    ctx.fillStyle = `hsla(${hue}, 100%, 50%, ${1 - y/history.length})`;
+                    ctx.fillRect(x * barWidth, y * 2, barWidth, 2);
+                }
+            }
+
+            // Update UI bars
+            const uiBars = barsContainer.querySelectorAll('.bar');
+            uiBars.forEach((bar, i) => {
+                bar.style.width = (data[i % numBars] / 255) * 100 + '%';
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

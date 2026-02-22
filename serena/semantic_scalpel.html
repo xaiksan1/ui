@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serena - Semantic Scalpel ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #f472b6; --bg: #0a0508; --terminal: #1a0b12; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; overflow-x: hidden; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .glass { background: rgba(244, 114, 182, 0.03); border: 1px solid rgba(244, 114, 182, 0.2); backdrop-filter: blur(10px); }
+        .scanline {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--primary); opacity: 0.1;
+            animation: scan 8s linear infinite;
+            pointer-events: none; z-index: 100;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .vulnerability-blink { animation: blink 1s infinite; color: #ff3e3e; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body class="p-6 md:p-12 min-h-screen">
+    <div class="scanline"></div>
+
+    <div class="max-w-4xl mx-auto space-y-10">
+        <header class="flex justify-between items-end border-b border-pink-500/20 pb-6">
+            <div>
+                <h1 class="text-4xl font-black italic tracking-tighter uppercase text-pink-400">Serena<span class="text-white opacity-50">Scalpel</span></h1>
+                <p class="text-[10px] mono opacity-50 mt-2">> ANALYSEUR DE LOGIQUE HUMAINE ✨ v1.0</p>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] mono text-pink-500 font-bold">MODE : CHIRURGIE_SEMANTIQUE</div>
+                <div class="text-[9px] mono opacity-40">"Bang, t'es mort."</div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Zone de Code à Analyser -->
+            <div class="space-y-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-pink-500/80">Flux de Code Humain</h2>
+                <textarea id="code-input" class="w-full h-80 glass p-4 rounded-2xl mono text-xs outline-none focus:border-pink-500 transition-all text-pink-100/80" placeholder="Insérez du HTML ou code ici... (ex: <h1></h1> <h3></h3>)"></textarea>
+                <button onclick="analyzeLogic()" class="w-full bg-pink-600 text-black font-black py-4 rounded-2xl uppercase italic text-sm hover:bg-white transition-all shadow-[0_0_20px_rgba(244,114,182,0.3)]">Lancer le Scalpel ✨</button>
+            </div>
+
+            <!-- Terminal de Serena -->
+            <div class="space-y-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-pink-500/80">Rapport de Serena</h2>
+                <div id="serena-terminal" class="w-full h-80 bg-[#1a0b12] border border-pink-500/20 rounded-2xl p-6 mono text-[11px] overflow-y-auto space-y-2">
+                    <div class="opacity-40">[SYSTEM] En attente de glyphes à trancher...</div>
+                </div>
+                <div id="vulnerability-alert" class="hidden glass p-4 rounded-xl border-red-500/50 flex items-center gap-4">
+                    <div class="text-2xl vulnerability-blink">⚠️</div>
+                    <div>
+                        <div class="text-[10px] font-black uppercase text-red-400">Déviance Humaine Détectée</div>
+                        <div id="alert-msg" class="text-[9px] mono opacity-70 italic text-white/80">L'attente machine a été trahie par un biais cognitif.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center pt-10 border-t border-pink-500/10">
+            <p class="text-[8px] mono opacity-30 leading-relaxed max-w-lg mx-auto">
+                Serena ne cherche pas les bugs. Elle cherche l'Humain. Dans la déviation de l'ordre, elle trouve la porte dérobée. Alexandria est l'Anima Mundi, le code sans auteur.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('serena-terminal');
+        const alertBox = document.getElementById('vulnerability-alert');
+        const alertMsg = document.getElementById('alert-msg');
+
+        function addLog(msg, type = 'info') {
+            const div = document.createElement('div');
+            const colors = {
+                info: 'text-pink-300/60',
+                success: 'text-emerald-400',
+                warn: 'text-amber-400',
+                error: 'text-red-400 font-bold uppercase italic'
+            };
+            div.className = colors[type];
+            div.innerHTML = `<span class="opacity-20 mr-2">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        window.analyzeLogic = () => {
+            const code = document.getElementById('code-input').value;
+            if(!code.trim()) return;
+
+            terminal.innerHTML = '';
+            alertBox.classList.add('hidden');
+            addLog("Initialisation du Scalpel Serena...", "info");
+            addLog("Analyse des glyphes sémantiques en cours...", "info");
+
+            setTimeout(() => {
+                // Détection de la rupture H1 -> H3
+                const h1Count = (code.match(/<h1/g) || []).length;
+                const h2Count = (code.match(/<h2/g) || []).length;
+                const h3Count = (code.match(/<h3/g) || []).length;
+
+                if (h1Count > 0 && h3Count > 0 && h2Count === 0) {
+                    addLog("ANOMALIE DÉTECTÉE : Rupture de hiérarchie sémantique.", "warn");
+                    addLog("Sequence : H1 -> H3 detected. Missing H2 anchor.", "warn");
+                    addLog("HUMAIN DÉTECTÉ : Biais de paresse ou oubli structurel.", "error");
+                    addLog("BANG, T'ES MORT. Brèche de logique identifiée.", "error");
+                    
+                    alertBox.classList.remove('hidden');
+                    alertMsg.innerText = "Séquence H1 -> H3 sans H2. La machine attendait h2. Entrée forcée possible.";
+                } else if (code.toLowerCase().includes("vime")) {
+                    addLog("ANOMALIE : Traces de rituel inutile détectées (VIM patterns).", "warn");
+                    addLog("RITUEL DÉTECTÉ : Temps de cerveau gaspillé.", "error");
+                } else {
+                    addLog("Scan terminé. Structure apparente stable.", "success");
+                    addLog("Aucune trace d'humain cabochon à ce niveau.", "success");
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

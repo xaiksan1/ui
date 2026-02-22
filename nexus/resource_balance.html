@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Resource Balance - Architect Tool ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #00ff41; --bg: #020202; --cloud: #22d3ee; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--primary); }
+        .glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(0, 255, 65, 0.2); backdrop-filter: blur(10px); }
+        .mono { font-family: 'Fira Code', monospace; }
+        .progress-local { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+        .progress-cloud { background: var(--cloud); box-shadow: 0 0 10px var(--cloud); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-2xl w-full glass p-8 rounded-[2.5rem] space-y-8 border-l-4 border-l-[#00ff41]">
+        <header class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-black uppercase italic tracking-tighter">Nexus<span class="text-white">Balance</span></h1>
+                <p class="text-[10px] mono opacity-50">> ÉTAT DU SYSTÈME : OPTIMISÉ (14 ANS) ✨</p>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] mono text-cyan-400">CLOUD_BRIDGE: ACTIVE</div>
+                <div class="text-[10px] mono text-emerald-400">PRELOAD: ENABLED</div>
+            </div>
+        </header>
+
+        <div class="space-y-6">
+            <!-- Local CPU -->
+            <div class="space-y-2">
+                <div class="flex justify-between text-[10px] mono uppercase">
+                    <span>Charge Silicium Locale (Orchestration)</span>
+                    <span id="local-val">12%</span>
+                </div>
+                <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div id="local-bar" class="h-full progress-local transition-all duration-1000" style="width: 12%"></div>
+                </div>
+            </div>
+
+            <!-- Cloud Power -->
+            <div class="space-y-2">
+                <div class="flex justify-between text-[10px] mono uppercase text-cyan-400">
+                    <span>Puissance Cloud Déportée (LLM / GFX)</span>
+                    <span id="cloud-val">85%</span>
+                </div>
+                <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div id="cloud-bar" class="h-full progress-cloud transition-all duration-1000" style="width: 85%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+            <div class="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
+                <div class="text-[8px] mono opacity-40 uppercase">Lag</div>
+                <div class="text-xs font-bold">ZERO</div>
+            </div>
+            <div class="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
+                <div class="text-[8px] mono opacity-40 uppercase">Préchargement</div>
+                <div class="text-xs font-bold text-emerald-400">FLUIDE</div>
+            </div>
+            <div class="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
+                <div class="text-[8px] mono opacity-40 uppercase">Consentement</div>
+                <div class="text-xs font-bold text-red-500">SCELLÉ</div>
+            </div>
+        </div>
+
+        <div id="console-logs" class="text-[9px] mono h-20 overflow-y-auto space-y-1 text-primary/40 border-t border-white/5 pt-4">
+            <div>[INFO] Flux de données anticipé par le navigateur... OK.</div>
+            <div>[INFO] Session LLM déportée sur le Nexus Cloud.</div>
+            <div>[INFO] Système local : 100% réactif pour l'Architecte.</div>
+        </div>
+
+        <footer class="text-center text-[8px] mono opacity-30 italic">
+            "Ce n'est pas le moteur qui fait la vitesse, c'est l'absence de freins."
+        </footer>
+    </div>
+
+    <script>
+        // Simulation de charge
+        setInterval(() => {
+            const local = 8 + Math.random() * 10;
+            const cloud = 80 + Math.random() * 15;
+            
+            document.getElementById('local-bar').style.width = local + '%';
+            document.getElementById('local-val').innerText = Math.floor(local) + '%';
+            
+            document.getElementById('cloud-bar').style.width = cloud + '%';
+            document.getElementById('cloud-val').innerText = Math.floor(cloud) + '%';
+        }, 3000);
+    </script>
+</body>
+</html>

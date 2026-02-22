@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAM v6.4 - Black Hole</title>
+    <style>
+        :root {
+            --bh-orange: #ff4500;
+            --bh-bg: #000;
+            --bh-glow: rgba(255, 69, 0, 0.5);
+        }
+
+        body {
+            margin: 0;
+            background: var(--bh-bg);
+            color: var(--bh-orange);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+
+        #bh-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+
+        .stats {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui-overlay">
+        <h1 style="margin:0; font-size: 24px;">SINGULARITY_v6.4</h1>
+        <div style="font-size: 12px; opacity: 0.7;">DATA_PURGE_PROTOCOL_ACTIVE</div>
+    </div>
+
+    <div class="stats">
+        PURGED_BYTES: <span id="purged-count">0</span> MB<br>
+        STABILITY: 99.9%
+    </div>
+
+    <canvas id="bh-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('bh-canvas');
+        const ctx = canvas.getContext('2d');
+        const purgedCountEl = document.getElementById('purged-count');
+
+        let width, height;
+        let purged = 0;
+        const particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.max(width, height) * 0.6;
+                this.x = width/2 + Math.cos(angle) * dist;
+                this.y = height/2 + Math.sin(angle) * dist;
+                this.size = 1 + Math.random() * 3;
+                this.speed = 2 + Math.random() * 5;
+                this.text = Math.random() > 0.5 ? '0' : '1';
+            }
+
+            update() {
+                const dx = width/2 - this.x;
+                const dy = height/2 - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 10) {
+                    this.reset();
+                    purged += 0.1;
+                    purgedCountEl.innerText = purged.toFixed(1);
+                }
+
+                const angle = Math.atan2(dy, dx);
+                this.x += Math.cos(angle) * this.speed;
+                this.y += Math.sin(angle) * this.speed;
+                
+                // Swirl effect
+                this.x += Math.cos(angle + Math.PI/2) * (this.speed * 0.5);
+                this.y += Math.sin(angle + Math.PI/2) * (this.speed * 0.5);
+            }
+
+            draw() {
+                ctx.fillStyle = var(--bh-orange);
+                ctx.font = `${this.size * 4}px monospace`;
+                ctx.fillText(this.text, this.x, this.y);
+            }
+        }
+
+        for(let i=0; i<200; i++) particles.push(new Particle());
+
+        function drawAccretionDisk() {
+            const time = Date.now() * 0.001;
+            ctx.save();
+            ctx.translate(width/2, height/2);
+            
+            for(let i=0; i<5; i++) {
+                ctx.rotate(time * 0.1);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 150 + i*20, 50 + i*10, 0, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 69, 0, ${0.1 - i*0.02})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // Singularity
+            ctx.beginPath();
+            ctx.arc(0, 0, 40, 0, Math.PI * 2);
+            ctx.fillStyle = '#000';
+            ctx.shadowBlur = 50;
+            ctx.shadowColor = var(--bh-orange);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            ctx.restore();
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            drawAccretionDisk();
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+    </script>
+</body>
+</html>

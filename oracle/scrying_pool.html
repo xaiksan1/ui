@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAM - Oracle Scrying Pool</title>
+    <style>
+        body { margin: 0; background: #1a0033; color: #e6ccff; font-family: 'Garamond', serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #pool {
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #4d0099 0%, #1a0033 70%);
+            border: 10px solid #330066;
+            box-shadow: 0 0 50px #4d0099, inset 0 0 100px #000;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        #ripples {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #search-input {
+            margin-top: 30px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid #e6ccff;
+            color: #e6ccff;
+            font-size: 24px;
+            text-align: center;
+            outline: none;
+            width: 300px;
+            padding: 10px;
+        }
+        .vision {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            text-align: center;
+            opacity: 0;
+            transition: 2s;
+            max-width: 80%;
+        }
+        .active-vision { opacity: 1; filter: blur(0); }
+    </style>
+</head>
+<body>
+    <div id="pool">
+        <canvas id="ripples"></canvas>
+        <div id="vision-text" class="vision">Peer into the depths...</div>
+    </div>
+    <input type="text" id="search-input" placeholder="Ask the Oracle...">
+
+    <script>
+        const canvas = document.getElementById('ripples');
+        const ctx = canvas.getContext('2d');
+        const visionText = document.getElementById('vision-text');
+        const input = document.getElementById('search-input');
+
+        canvas.width = 500;
+        canvas.height = 500;
+
+        let rippleX = 250, rippleY = 250, rippleR = 0;
+
+        function draw() {
+            ctx.fillStyle = 'rgba(26, 0, 51, 0.1)';
+            ctx.fillRect(0, 0, 500, 500);
+
+            if (rippleR > 0) {
+                ctx.strokeStyle = `rgba(230, 204, 255, ${1 - rippleR / 250})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(rippleX, rippleY, rippleR, 0, Math.PI * 2);
+                ctx.stroke();
+                rippleR += 5;
+                if (rippleR > 250) rippleR = 0;
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                rippleX = 250;
+                rippleY = 250;
+                rippleR = 1;
+                visionText.classList.remove('active-vision');
+                setTimeout(() => {
+                    const visions = [
+                        "The stars align in your favor.",
+                        "A great change is coming to the codebase.",
+                        "The void whispers of a missing semicolon.",
+                        "Seek the truth in the logs.",
+                        "The Anima Mundi is awakening."
+                    ];
+                    visionText.innerText = visions[Math.floor(Math.random() * visions.length)];
+                    visionText.classList.add('active-vision');
+                }, 1000);
+            }
+        });
+
+        draw();
+    </script>
+</body>
+</html>

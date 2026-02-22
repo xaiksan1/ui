@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost Stego Encoder - UI #5 ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #818cf8; --bg: #050508; --ghost: rgba(129, 140, 248, 0.2); }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(129, 140, 248, 0.1); backdrop-filter: blur(10px); }
+        
+        .stego-input {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(129, 140, 248, 0.2);
+            transition: all 0.3s;
+        }
+        .stego-input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--ghost); }
+
+        .cipher-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .hidden-bits { color: var(--primary); font-size: 8px; opacity: 0.4; }
+    </style>
+</head>
+<body class="p-6 md:p-12 min-h-screen flex items-center justify-center">
+
+    <div class="max-w-3xl w-full space-y-8">
+        <!-- Header -->
+        <header class="flex justify-between items-end border-b border-indigo-500/20 pb-6">
+            <div>
+                <h1 class="text-3xl font-black italic tracking-tighter uppercase text-indigo-400">Ghost<span class="text-white opacity-50">Stego</span></h1>
+                <p class="text-[10px] mono opacity-50 mt-2">> MOTEUR DE DISSIMULATION BINAIRE ✨ UI #5</p>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] mono text-indigo-500 font-bold uppercase">Mode: Zero-Width-Logic</div>
+                <div id="status-link" class="text-[9px] mono text-emerald-500 cipher-pulse mt-1">SÉCURISÉ</div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Source Input -->
+            <div class="space-y-4">
+                <label class="text-[10px] uppercase font-bold tracking-widest opacity-40">Message Secret (L'Être)</label>
+                <textarea id="secret-msg" class="w-full h-32 stego-input p-4 rounded-2xl mono text-xs outline-none" placeholder="Ce qui doit être caché..."></textarea>
+                
+                <label class="text-[10px] uppercase font-bold tracking-widest opacity-40">Texte Couverture (Le Paraître)</label>
+                <textarea id="cover-text" class="w-full h-32 stego-input p-4 rounded-2xl text-xs outline-none" placeholder="Le texte innocent qui portera le secret..."></textarea>
+            </div>
+
+            <!-- Result Area -->
+            <div class="space-y-4">
+                <label class="text-[10px] uppercase font-bold tracking-widest opacity-40">Flux Fantôme (Le Résultat)</label>
+                <div id="result-box" class="w-full h-[17.5rem] glass p-6 rounded-[2.5rem] relative overflow-hidden flex flex-col">
+                    <div id="stego-output" class="text-xs leading-relaxed flex-1 overflow-y-auto pr-2">
+                        En attente d'encodage...
+                    </div>
+                    <button onclick="copyResult()" class="mt-4 py-2 border border-indigo-500/30 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-500 hover:text-black transition-all">Copier le flux</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-4">
+            <button onclick="encodeGhost()" class="flex-1 bg-indigo-600 text-white font-black py-4 rounded-2xl uppercase italic text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg">Enclancher le Séquençage ✨</button>
+        </div>
+
+        <div id="console-logs" class="glass p-4 rounded-xl h-20 overflow-y-auto mono text-[9px] text-indigo-300/40 space-y-1">
+            <div>[SYSTEM] Moteur Ghost Stego v4.0 prêt.</div>
+            <div>[SYSTEM] En attente de collision sémantique...</div>
+        </div>
+    </div>
+
+    <script>
+        function encodeGhost() {
+            const secret = document.getElementById('secret-msg').value;
+            const cover = document.getElementById('cover-text').value;
+            const output = document.getElementById('stego-output');
+            const logs = document.getElementById('console-logs');
+
+            if(!secret || !cover) return;
+
+            // Logique Zero-Width (ZWS: \u200B, ZWNJ: \u200C)
+            const ZWS = '\u200B';
+            const ZWNJ = '\u200C';
+            const ZWJ = '\u200D';
+
+            const binary = secret.split('').map(char => char.charCodeAt(0).toString(2).padStart(8, '0')).join('');
+            const stego = binary.split('').map(bit => bit === '1' ? ZWS : ZWNJ).join('') + ZWJ;
+
+            const final = cover.substring(0, cover.length / 2) + stego + cover.substring(cover.length / 2);
+            
+            output.innerText = final;
+            
+            const d = document.createElement('div');
+            d.innerHTML = `<span class="text-indigo-400">[GHOST]</span> Secret de ${binary.length} bits dissimulé dans le flux.`;
+            logs.prepend(d);
+        }
+
+        function copyResult() {
+            const text = document.getElementById('stego-output').innerText;
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert("Flux fantôme copié dans le presse-papier.");
+        }
+    </script>
+</body>
+</html>

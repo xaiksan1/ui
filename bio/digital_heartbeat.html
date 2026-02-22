@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAM - Bio-Digital Heartbeat</title>
+    <style>
+        body { margin: 0; background: #000; color: #ff3366; font-family: 'Courier New', Courier, monospace; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #heart-container { position: relative; width: 400px; height: 400px; }
+        .heart {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 51, 102, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: beat 1s infinite;
+        }
+        @keyframes beat {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            20% { transform: scale(1.1); opacity: 1; }
+            40% { transform: scale(0.9); opacity: 0.7; }
+            60% { transform: scale(1.05); opacity: 0.9; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+        #ecg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .stats {
+            position: absolute;
+            bottom: -60px;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+        .glitch {
+            animation: glitch 0.5s infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="heart-container">
+        <div class="heart"></div>
+        <canvas id="ecg-canvas"></canvas>
+        <div class="stats">
+            BPM: <span id="bpm">72</span> | SYNC: <span id="sync">99.9%</span>
+            <br>
+            <small style="color: #666;">ANIMA MUNDI CORE VITALITY</small>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('ecg-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 400;
+        canvas.height = 400;
+
+        let x = 0;
+        let points = [];
+
+        function drawECG() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#ff3366';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            points.push({ x: x, y: getY(x) });
+            if (points.length > 100) points.shift();
+
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const drawX = (p.x % 400);
+                if (i === 0) ctx.moveTo(drawX, p.y);
+                else ctx.lineTo(drawX, p.y);
+            }
+            ctx.stroke();
+
+            x += 5;
+            requestAnimationFrame(drawECG);
+        }
+
+        function getY(x) {
+            const base = 200;
+            const cycle = x % 100;
+            if (cycle < 10) return base - (cycle * 5);
+            if (cycle < 20) return base + ((cycle - 10) * 10) - 50;
+            if (cycle < 30) return base - ((cycle - 20) * 5) + 50;
+            return base + (Math.random() - 0.5) * 10;
+        }
+
+        setInterval(() => {
+            const bpm = 60 + Math.floor(Math.random() * 20);
+            document.getElementById('bpm').innerText = bpm;
+        }, 2000);
+
+        drawECG();
+    </script>
+</body>
+</html>

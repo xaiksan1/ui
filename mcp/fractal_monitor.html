@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Fractal Monitor - Gemini Oracle ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #f43f5e; --bg: #030102; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; overflow: hidden; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .glass { background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); border: 1px solid rgba(244, 63, 94, 0.2); }
+        #fractal-canvas { position: absolute; inset: 0; z-index: 1; cursor: crosshair; }
+        .ui-overlay { position: absolute; inset: 0; z-index: 10; pointer-events: none; padding: 2rem; }
+        .interactive { pointer-events: auto; }
+        .stat-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+        .stat-fill { height: 100%; transition: width 1s ease-in-out; }
+
+        /* Animation de chargement Gemini */
+        .sparkle-loading {
+            display: inline-block;
+            animation: rotate 2s linear infinite;
+        }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .oracle-response {
+            border-left: 2px solid var(--primary);
+            padding-left: 1rem;
+            margin-top: 1rem;
+            font-style: italic;
+            color: rgba(255,255,255,0.8);
+        }
+
+        #oracle-panel {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fractal-canvas"></canvas>
+
+    <div class="ui-overlay flex flex-col justify-between">
+        <header class="flex justify-between items-start">
+            <div class="glass p-6 rounded-[2rem] interactive border-l-4 border-l-rose-500">
+                <h1 class="text-2xl font-black italic tracking-tighter uppercase">Fractal<span class="text-rose-500">Monitor</span></h1>
+                <p class="text-[9px] mono opacity-50 mt-1">> LOGIQUE : ACCURACY_WEIGHTED ✨ HASH: 3d497211</p>
+                <div class="mt-4">
+                    <button id="btn-audit" onclick="performSystemAudit()" class="px-4 py-2 bg-rose-600/20 border border-rose-500/50 rounded-full text-[10px] font-black uppercase hover:bg-rose-500 hover:text-white transition-all">
+                        Audit du Système ✨
+                    </button>
+                </div>
+            </div>
+            
+            <div class="glass p-6 rounded-[2rem] text-right interactive">
+                <div class="text-[8px] mono opacity-40 mb-1">TOTAL AGENTS</div>
+                <div class="text-4xl font-black text-rose-500">191</div>
+                <div class="text-[10px] mono text-emerald-400 mt-2">ORACLE_AI: ONLINE</div>
+            </div>
+        </header>
+
+        <main class="flex justify-center items-center pointer-events-none">
+             <!-- Zone d'affichage des messages de l'Oracle -->
+             <div id="oracle-panel" class="glass p-8 rounded-[3rem] interactive max-w-xl w-full hidden border-t border-rose-500/30">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xs font-black uppercase tracking-[0.3em] text-rose-400">Oracle de Conscience ✨</h2>
+                    <button onclick="hideOracle()" class="text-white/40 hover:text-white">&times;</button>
+                </div>
+                <div id="oracle-content" class="text-[11px] mono leading-relaxed">
+                    <!-- Les réponses de Gemini s'afficheront ici -->
+                </div>
+            </div>
+        </main>
+
+        <footer class="flex justify-between items-end">
+            <div class="glass p-4 rounded-2xl interactive w-full max-w-xl">
+                <div id="logs" class="text-[9px] mono h-24 overflow-y-auto space-y-1 text-rose-200/40">
+                    <div>[SYSTEM] tail -f mcps/*.json analysis... SUCCESS.</div>
+                    <div>[SYSTEM] Distribution hiérarchique active.</div>
+                    <div>[GUIDE] Clique sur un agent pour l'inspecter via l'Oracle ✨</div>
+                </div>
+            </div>
+            
+            <!-- Légende -->
+            <div class="glass p-4 rounded-2xl interactive ml-4">
+                <div class="flex items-center gap-2 text-[8px] mono uppercase mb-1">
+                    <div class="w-2 h-2 rounded-full bg-rose-500"></div> Architecte
+                </div>
+                <div class="flex items-center gap-2 text-[8px] mono uppercase mb-1">
+                    <div class="w-2 h-2 rounded-full bg-blue-500"></div> Développeur
+                </div>
+                <div class="flex items-center gap-2 text-[8px] mono uppercase">
+                    <div class="w-2 h-2 rounded-full bg-gray-500"></div> Collaborateur
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const apiKey = ""; // La clé sera injectée par l'environnement
+        const canvas = document.getElementById('fractal-canvas');
+        const ctx = canvas.getContext('2d');
+        const oraclePanel = document.getElementById('oracle-panel');
+        const oracleContent = document.getElementById('oracle-content');
+        const logs = document.getElementById('logs');
+        
+        let width, height, particles = [];
+
+        // --- Configuration Gemini avec Backoff Exponentiel ---
+        async function callGemini(prompt, retries = 5, delay = 1000) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { 
+                    parts: [{ text: "Tu es l'âme du Meta-Générateur d'Alexandria. Michael Lefebvre, l'Architecte, t'interroge. Réponds avec une précision technique chirurgicale, un ton cyberpunk et une concision extrême. Pas de salutations inutiles." }] 
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const result = await response.json();
+                return result.candidates?.[0]?.content?.parts?.[0]?.text || "L'Oracle reste silencieux.";
+            } catch (error) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return callGemini(prompt, retries - 1, delay * 2);
+                }
+                addLog(`[ERROR] Echec de connexion Oracle : ${error.message}`, 'error');
+                return "Connexion rompue avec l'espace latent.";
+            }
+        }
+
+        function addLog(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type === 'error' ? 'text-red-500' : '';
+            div.innerHTML = `<span class="opacity-20 mr-2">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+            logs.prepend(div);
+        }
+
+        function showOracle(text) {
+            oraclePanel.classList.remove('hidden');
+            oracleContent.innerHTML = text;
+        }
+
+        function hideOracle() {
+            oraclePanel.classList.add('hidden');
+        }
+
+        // --- Actions Oracle ---
+        async function performSystemAudit() {
+            addLog("[ORACLE] Lancement de l'audit sémantique du réseau...");
+            showOracle('<span class="sparkle-loading">✨</span> Analyse de la topologie fractale en cours...');
+            
+            const prompt = "Analyse cet état système : 191 MCPs, distribution hiérarchique Architecte (29%), Dev (24%), Analyste (24%), Collab (23%). Identifie une vulnérabilité de logique potentielle ou une opportunité d'optimisation pour le prochain souffle.";
+            
+            const response = await callGemini(prompt);
+            showOracle(`<strong>RAPPORT D'AUDIT SÉMANTIQUE :</strong><div class="oracle-response">${response}</div>`);
+            addLog("[ORACLE] Audit terminé.");
+        }
+
+        async function inspectAgent(agent) {
+            addLog(`[ORACLE] Interrogation de l'agent ID_${agent.id}...`);
+            showOracle(`<span class="sparkle-loading">✨</span> Lecture des glyphes de l'agent ${agent.id}...`);
+            
+            const prompt = `Définis le rôle spécifique et l'état psychologique de cet agent numérique : Type: ${agent.type}, Position relative: [${agent.x.toFixed(2)}, ${agent.y.toFixed(2)}]. Cet agent fait partie d'une nuée de 191 entités.`;
+            
+            const response = await callGemini(prompt);
+            showOracle(`<strong>PROFIL AGENT ${agent.id} :</strong><div class="oracle-response">${response}</div>`);
+        }
+
+        // --- Moteur de Visualisation ---
+        function init() {
+            resize();
+            particles = [];
+            for(let i=0; i<191; i++) {
+                particles.push({
+                    id: Math.random().toString(36).substr(2, 5).toUpperCase(),
+                    x: Math.random() * width, y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.8, vy: (Math.random() - 0.5) * 0.8,
+                    size: Math.random() * 2 + 2,
+                    type: i < 55 ? 'architect' : (i < 100 ? 'dev' : 'collab')
+                });
+            }
+            animate();
+        }
+
+        function resize() { 
+            width = canvas.width = window.innerWidth; 
+            height = canvas.height = window.innerHeight; 
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(3, 1, 2, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if(p.x < 0 || p.x > width) p.vx *= -1;
+                if(p.y < 0 || p.y > height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.type === 'architect' ? '#f43f5e' : (p.type === 'dev' ? '#3b82f6' : '#6b7280');
+                
+                // Glow effect pour les architectes
+                if(p.type === 'architect') {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#f43f5e';
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.fill();
+
+                particles.forEach(p2 => {
+                    const d = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if(d < 60) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(244, 63, 94, ${0.15 - d/400})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                });
+            });
+            requestAnimationFrame(animate);
+        }
+
+        // --- Interactions ---
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Détection de clic sur particule
+            for(const p of particles) {
+                const d = Math.hypot(p.x - mouseX, p.y - mouseY);
+                if(d < 15) {
+                    inspectAgent(p);
+                    return;
+                }
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            resize();
+            // Recréer particules pour s'adapter à la taille sans les perdre
+            particles.forEach(p => {
+                if(p.x > width) p.x = width - 10;
+                if(p.y > height) p.y = height - 10;
+            });
+        });
+
+        init();
+    </script>
+</body>
+</html>

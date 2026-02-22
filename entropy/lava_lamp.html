@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAM Lava Lamp Entropy</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a0000;
+            color: #ff4500;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+            filter: blur(20px) contrast(30);
+        }
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            text-shadow: 0 0 10px #ff4500;
+            z-index: 10;
+        }
+        .entropy-value {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            letter-spacing: 5px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <h1>LAVA_ENTROPY_v6.4</h1>
+        <p>SOURCE: THERMAL_FLUCTUATION</p>
+    </div>
+    <div class="entropy-value" id="entropy">0x00000000</div>
+    <canvas id="lavaCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('lavaCanvas');
+        const ctx = canvas.getContext('2d');
+        const entropyDisplay = document.getElementById('entropy');
+
+        let width, height;
+        let blobs = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        class Blob {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = height + Math.random() * 100;
+                this.radius = Math.random() * 100 + 50;
+                this.speed = Math.random() * 1 + 0.5;
+                this.vx = (Math.random() - 0.5) * 1;
+            }
+
+            update() {
+                this.y -= this.speed;
+                this.x += this.vx;
+
+                if (this.y < -this.radius) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff4500';
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            resize();
+            blobs = [];
+            for (let i = 0; i < 15; i++) {
+                blobs.push(new Blob());
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = '#1a0000';
+            ctx.fillRect(0, 0, width, height);
+
+            blobs.forEach(blob => {
+                blob.update();
+                blob.draw();
+            });
+
+            // Update entropy string
+            if (Math.random() > 0.9) {
+                const val = Math.floor(Math.random() * 0xFFFFFFFF).toString(16).toUpperCase().padStart(8, '0');
+                entropyDisplay.innerText = `0x${val}`;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        init();
+        animate();
+    </script>
+</body>
+</html>

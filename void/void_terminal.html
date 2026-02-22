@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAM - Void Terminal</title>
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: 'Courier New', Courier, monospace; height: 100vh; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        #output { flex: 1; overflow-y: auto; margin-bottom: 10px; white-space: pre-wrap; }
+        #input-line { display: flex; }
+        #prompt { color: #fff; margin-right: 10px; }
+        #cmd-input { background: transparent; border: none; color: #fff; font-family: inherit; font-size: inherit; flex: 1; outline: none; }
+        .void-msg { color: #666; font-style: italic; }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="output"></div>
+    <div id="input-line">
+        <span id="prompt">VOID@ADAM:~$</span>
+        <input type="text" id="cmd-input" autofocus>
+    </div>
+    <div class="scanline"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('cmd-input');
+
+        const commands = {
+            'help': () => 'Available commands: help, clear, status, purge, echo, exit',
+            'clear': () => { output.innerHTML = ''; return ''; },
+            'status': () => 'VOID CORE: STABLE\nENTROPY LEVEL: 0.0003%\nCONNECTION: ENCRYPTED',
+            'purge': () => {
+                setTimeout(() => print('Purging temporary buffers...'), 500);
+                setTimeout(() => print('Void cleanup complete.', 'success'), 1500);
+                return 'Initiating purge...';
+            },
+            'echo': (args) => args.join(' '),
+            'exit': () => 'You cannot exit the void.'
+        };
+
+        function print(msg, className = '') {
+            if (!msg) return;
+            const div = document.createElement('div');
+            div.textContent = msg;
+            if (className) div.className = className;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = input.value.trim();
+                print(`VOID@ADAM:~$ ${val}`);
+                input.value = '';
+
+                const [cmd, ...args] = val.split(' ');
+                if (commands[cmd]) {
+                    print(commands[cmd](args));
+                } else if (val) {
+                    print(`Command not found: ${cmd}`, 'error');
+                }
+            }
+        });
+
+        print('ADAM VOID TERMINAL v6.4', 'void-msg');
+        print('Type "help" for a list of commands.');
+    </script>
+</body>
+</html>

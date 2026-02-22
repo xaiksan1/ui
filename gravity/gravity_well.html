@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAM v6.4 - Gravity Well</title>
+    <style>
+        :root {
+            --gravity-violet: #8a2be2;
+            --gravity-bg: #000005;
+            --gravity-grid: rgba(138, 43, 226, 0.2);
+        }
+
+        body {
+            margin: 0;
+            background: var(--gravity-bg);
+            color: var(--gravity-violet);
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+        }
+
+        #gravity-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border: 1px solid var(--gravity-violet);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui-layer">
+        <h1 style="margin:0; font-size: 20px; letter-spacing: 4px;">GRAVITY_WELL_v6.4</h1>
+        <div style="font-size: 10px; opacity: 0.6;">SPACETIME DATA DEFORMATION</div>
+    </div>
+
+    <div class="controls">
+        CLICK TO INJECT DATA MASS<br>
+        CURRENT_SINGULARITIES: <span id="mass-count">3</span>
+    </div>
+
+    <canvas id="gravity-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gravity-canvas');
+        const ctx = canvas.getContext('2d');
+        const massCountEl = document.getElementById('mass-count');
+
+        let width, height;
+        const spacing = 30;
+        const masses = [
+            { x: 0, y: 0, targetX: 0, targetY: 0, strength: 5000, pulse: 0 },
+            { x: 0, y: 0, targetX: 0, targetY: 0, strength: 3000, pulse: 0 },
+            { x: 0, y: 0, targetX: 0, targetY: 0, strength: 4000, pulse: 0 }
+        ];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            masses.forEach(m => {
+                m.x = m.targetX = Math.random() * width;
+                m.y = m.targetY = Math.random() * height;
+            });
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = var(--gravity-grid);
+            ctx.lineWidth = 1;
+
+            // Horizontal lines
+            for (let y = 0; y < height; y += spacing) {
+                ctx.beginPath();
+                for (let x = 0; x < width; x += 5) {
+                    let dx = x;
+                    let dy = y;
+
+                    masses.forEach(m => {
+                        const distSq = (x - m.x)**2 + (y - m.y)**2;
+                        const force = m.strength / (distSq + 1000);
+                        const angle = Math.atan2(m.y - y, m.x - x);
+                        dx += Math.cos(angle) * force;
+                        dy += Math.sin(angle) * force;
+                    });
+
+                    if (x === 0) ctx.moveTo(dx, dy);
+                    else ctx.lineTo(dx, dy);
+                }
+                ctx.stroke();
+            }
+
+            // Vertical lines
+            for (let x = 0; x < width; x += spacing) {
+                ctx.beginPath();
+                for (let y = 0; y < height; y += 5) {
+                    let dx = x;
+                    let dy = y;
+
+                    masses.forEach(m => {
+                        const distSq = (x - m.x)**2 + (y - m.y)**2;
+                        const force = m.strength / (distSq + 1000);
+                        const angle = Math.atan2(m.y - y, m.x - x);
+                        dx += Math.cos(angle) * force;
+                        dy += Math.sin(angle) * force;
+                    });
+
+                    if (y === 0) ctx.moveTo(dx, dy);
+                    else ctx.lineTo(dx, dy);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function drawMasses() {
+            masses.forEach(m => {
+                m.pulse += 0.05;
+                const s = 5 + Math.sin(m.pulse) * 2;
+                
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, s, 0, Math.PI * 2);
+                ctx.fillStyle = var(--gravity-violet);
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = var(--gravity-violet);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Movement
+                m.x += (m.targetX - m.x) * 0.02;
+                m.y += (m.targetY - m.y) * 0.02;
+
+                if (Math.abs(m.x - m.targetX) < 1) {
+                    m.targetX = Math.random() * width;
+                    m.targetY = Math.random() * height;
+                }
+            });
+        }
+
+        function animate() {
+            ctx.fillStyle = var(--gravity-bg);
+            ctx.fillRect(0, 0, width, height);
+
+            drawGrid();
+            drawMasses();
+
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            masses.push({
+                x: e.clientX,
+                y: e.clientY,
+                targetX: Math.random() * width,
+                targetY: Math.random() * height,
+                strength: 2000 + Math.random() * 4000,
+                pulse: Math.random() * 10
+            });
+            massCountEl.innerText = masses.length;
+        });
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+    </script>
+</body>
+</html>
