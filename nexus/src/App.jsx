@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import HypervisorDashboard from './HypervisorDashboard.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area
@@ -28,12 +29,68 @@ import {
  * 1. TARDIS : Navigation temporelle et multi-perspectives.
  * 2. KAPSO : Knowledge-Augmented Program Synthesis & Orchestration.
  * 3. ALPEIRON : Pivot mobile 8D pour la stabilité de Niveau 6.
- * IA : Proxied via /api/oracle (Gemini 2.5 Flash + TTS)
+ * IA : Proxied via /api/oracle (Claude Sonnet 4.6 + Web Speech API)
  */
 
 // API key is now server-side only — all calls go through /api/oracle
 
-export default function App() {
+// ─── Tab Shell ────────────────────────────────────────────────────────────────
+
+const TABS = [
+  { id: 'nexus',      label: 'TARDIS · KAPSO · ALPEIRON', dot: '#8b5cf6' },
+  { id: 'hypervisor', label: 'HYPERVISOR',                dot: '#10b981' },
+  { id: 'mugetsu',    label: 'MUGETSU',                   dot: '#06b6d4' },
+];
+
+function TabShell() {
+  const [activeTab, setActiveTab] = useState('nexus');
+
+  return (
+    <div className="flex flex-col h-screen bg-[#010103]">
+      {/* Tab bar */}
+      <nav className="flex items-center gap-1 px-4 pt-3 pb-0 bg-black/80 border-b border-white/5 backdrop-blur-xl z-50 shrink-0">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${
+              activeTab === tab.id
+                ? 'bg-white/5 text-white border-current'
+                : 'text-stone-500 hover:text-stone-300 border-transparent hover:bg-white/5'
+            }`}
+            style={activeTab === tab.id ? { color: tab.dot, borderColor: tab.dot } : {}}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: activeTab === tab.id ? tab.dot : '#44403c' }}
+            />
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto">
+        {activeTab === 'nexus'      && <NexusApp />}
+        {activeTab === 'hypervisor' && <HypervisorDashboard />}
+        {activeTab === 'mugetsu'    && (
+          <iframe
+            src="/mugetsu.html"
+            title="MUGETSU"
+            className="w-full h-full border-0"
+            allow="autoplay"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default TabShell;
+
+// ─── Nexus (ancien export default) ───────────────────────────────────────────
+
+function NexusApp() {
   // --- États du Système ---
   const [kapsoStep, setKapsoStep] = useState('IDLE'); // IDLE, SYNTHESIS, STABILIZING, READY
   const [isAiLoading, setIsAiLoading] = useState(false);

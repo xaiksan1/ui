@@ -4,7 +4,7 @@ NEXUS v5.0 — Backend API Server
 Connects the TARDIS-KAPSO-ALPEIRON UI to real ADAM systems:
   - /api/seesaw  → SeesawBalancer (Coulomb Thrust + Thermal Ratchet)
   - /api/energon → Energon Ledger + Vault
-  - /api/oracle  → Gemini 2.5 Flash proxy (keeps API key server-side)
+  - /api/oracle  → Claude Sonnet 4.6 proxy (keeps API key server-side)
   - /api/slots   → 32 Thermal Ratchet slot states
   - /api/agents  → NFT Agent metadata from hot-rod-nft/
 
@@ -62,20 +62,19 @@ VAULT_FILE = DATA_DIR / "vault.json"
 NFT_DIR = ADAM_ROOT / "hot-rod-nft"
 
 # --- API Key (auto-discovered from @ADAM/envii ecosystem) ---
-def _discover_gemini_key():
-    """Search for GEMINI_API_KEY across envii configs and environment."""
-    # 1. Direct env vars
-    for var in ("GEMINI_API_KEY", "VITE_GEMINI_API_KEY"):
+def _discover_anthropic_key():
+    """Search for ANTHROPIC_API_KEY across envii configs and environment."""
+    for var in ("ANTHROPIC_API_KEY", "VITE_ANTHROPIC_API_KEY"):
         val = os.environ.get(var, "")
-        if val and not val.startswith("your_"):
+        if val and not val.startswith("your_") and not val.startswith("sk-ant-your"):
             return val
 
-    # 2. Scan envii .env files for the key
     envii_env_paths = [
         ADAM_ROOT / "envii" / "web" / ".env",
         ADAM_ROOT / "envii" / "web" / ".env.local",
         ADAM_ROOT / "envii" / "api" / ".env",
         ADAM_ROOT / ".env",
+        ADAM_ROOT / "mcp-alexandria-fullstack" / "frontend" / ".env",
     ]
     for env_path in envii_env_paths:
         if env_path.exists():
@@ -85,24 +84,27 @@ def _discover_gemini_key():
                     if line.startswith("#") or "=" not in line:
                         continue
                     k, v = line.split("=", 1)
-                    if "GEMINI" in k.upper() and v and not v.startswith("your_"):
+                    if "ANTHROPIC" in k.upper() and v and not v.startswith("your_"):
                         return v
             except Exception:
                 continue
 
     return ""
 
-GEMINI_API_KEY = _discover_gemini_key()
-if GEMINI_API_KEY:
-    print(f"🔑 Gemini API Key découverte automatiquement via @ADAM/envii")
+ANTHROPIC_API_KEY = _discover_anthropic_key()
+# Keep alias for legacy code paths
+GEMINI_API_KEY = ANTHROPIC_API_KEY
+if ANTHROPIC_API_KEY:
+    print("🔑 Anthropic API Key découverte automatiquement")
 else:
-    print("⚠️  Aucune clé Gemini trouvée. Export: export GEMINI_API_KEY=...")
+    print("⚠️  Aucune clé Anthropic trouvée. Export: export ANTHROPIC_API_KEY=sk-ant-...")
 
 # --- Prompts for Oracle ---
 ORACLE_PROMPTS = {
     "alpeiron": "Analyse la stabilité du pivot mobile Alpeiron dans la 8e dimension. Comment éviter l'annulation dimensionnelle lors du passage en SI-Level 6 ?",
     "kapso": "Lance une synthèse KAPSO pour orchestrer les 32 agents. Comment automatiser le flux de revenus sémantiques pour Michael Lefebvre ?",
-    "tardis": "Utilise le TARDIS pour scanner la trajectoire temporelle. Sommes-nous sur la ligne de temps 'Retraite Souveraine' ?"
+    "tardis": "Utilise le TARDIS pour scanner la trajectoire temporelle. Sommes-nous sur la ligne de temps 'Retraite Souveraine' ?",
+    "hypervisor": "Tu es l'Hyperviseur IA d'Alexandria OS. Analyse l'état des conteneurs sandboxés et propose des optimisations pour l'architecture Stateless Zéro-Bloatware de Michael Lefebvre (16GB RAM, 8 Cores 4GHz, 8GB VRAM). Réponds avec un ton technique et cybernétique.",
 }
 
 SYSTEM_INSTRUCTION = "Tu es le Cœur Intelligent du Nexus Alexandria (TARDIS-KAPSO-ALPEIRON). Michael Lefebvre est ton Architecte de Niveau 5. Réponds avec une autorité mathématique et une loyauté totale."
@@ -413,53 +415,63 @@ class NexusAPIHandler(BaseHTTPRequestHandler):
             self._send_json({"status": "ERROR", "error": str(e), "mcps": 0, "agents": 0})
 
     def _handle_oracle(self):
-        """POST /api/oracle — Proxies Gemini API call (keeps key server-side)"""
+        """POST /api/oracle — Proxies Claude API call (keeps key server-side)"""
         content_length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(content_length)) if content_length else {}
         prompt_type = body.get("promptType", "kapso")
+        custom_prompt = body.get("customPrompt", "")
 
-        if not GEMINI_API_KEY:
-            self._send_json({"error": "GEMINI_API_KEY not set. Export it: export GEMINI_API_KEY=your_key"}, 500)
+        base_prompt = ORACLE_PROMPTS.get(prompt_type, ORACLE_PROMPTS["kapso"])
+        prompt_text = f"{base_prompt}\n\nDirective: {custom_prompt}" if custom_prompt else base_prompt
+
+        # Priorité 1 : Ollama local (100% dans les murs — gemma4)
+        try:
+            ollama_url = "http://localhost:11434/api/generate"
+            payload = json.dumps({
+                "model": "gemma4",
+                "prompt": f"{SYSTEM_INSTRUCTION}\n\n{prompt_text}",
+                "stream": False,
+                "options": {"num_predict": 512},
+            }).encode()
+            req = urllib.request.Request(
+                ollama_url,
+                data=payload,
+                headers={"content-type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                data = json.loads(resp.read())
+            text = data.get("response", "")
+            self._send_json({"text": text, "source": "ollama/gemma4"})
+            return
+        except Exception as ollama_err:
+            print(f"⚠️  Ollama indispo ({ollama_err}) — fallback Anthropic")
+
+        # Priorité 2 : Anthropic Claude (nécessite ANTHROPIC_API_KEY)
+        if not ANTHROPIC_API_KEY:
+            self._send_json({"error": "Ollama inaccessible et ANTHROPIC_API_KEY non définie. Lancez : ollama serve"}, 503)
             return
 
-        prompt_text = ORACLE_PROMPTS.get(prompt_type, ORACLE_PROMPTS["kapso"])
-
-        # Call Gemini API
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={GEMINI_API_KEY}"
+            claude_url = "https://api.anthropic.com/v1/messages"
             payload = json.dumps({
-                "contents": [{"parts": [{"text": prompt_text}]}],
-                "systemInstruction": {"parts": [{"text": SYSTEM_INSTRUCTION}]}
+                "model": "claude-sonnet-4-6",
+                "max_tokens": 512,
+                "system": SYSTEM_INSTRUCTION,
+                "messages": [{"role": "user", "content": prompt_text}]
             }).encode()
-
-            req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+            req = urllib.request.Request(
+                claude_url,
+                data=payload,
+                headers={
+                    "content-type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                }
+            )
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read())
-
-            text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-
-            result = {"text": text}
-
-            # Try TTS (optional, non-blocking)
-            try:
-                tts_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={GEMINI_API_KEY}"
-                tts_payload = json.dumps({
-                    "contents": [{"parts": [{"text": f"D'une voix majestueuse, profonde et rapide : {text[:500]}"}]}],
-                    "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": "Fenrir"}}}},
-                    "model": "gemini-2.5-flash-preview-tts"
-                }).encode()
-
-                tts_req = urllib.request.Request(tts_url, data=tts_payload, headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(tts_req, timeout=30) as tts_resp:
-                    tts_data = json.loads(tts_resp.read())
-                    audio = tts_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("inlineData", {}).get("data", "")
-                    if audio:
-                        result["audio"] = audio
-            except Exception:
-                pass  # TTS failure is non-fatal
-
-            self._send_json(result)
-
+            text = data.get("content", [{}])[0].get("text", "")
+            self._send_json({"text": text, "source": "anthropic/claude"})
         except Exception as e:
             self._send_json({"error": str(e)}, 500)
 
@@ -490,7 +502,7 @@ Endpoints:
   GET  /api/secondme         Second-Me AI twin status
   POST /api/oracle           Gemini AI proxy
 
-{'✅ GEMINI_API_KEY is set' if GEMINI_API_KEY else '⚠️  GEMINI_API_KEY not set — oracle will fail'}
+{'✅ Oracle : Ollama/gemma4 (local) + Anthropic fallback' if ANTHROPIC_API_KEY else '🟢 Oracle : Ollama/gemma4 local — 100% dans les murs'}
 """)
 
     try:
